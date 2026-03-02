@@ -68,7 +68,6 @@ export default function Header({
         borderBottom: "1px solid var(--border)",
         backdropFilter: "blur(24px)",
         flexWrap: "nowrap",
-        overflow: "hidden",
       }}
     >
       {/* Logo */}
@@ -106,7 +105,6 @@ export default function Header({
           </span>
         )}
       </a>
-
       {/* Dashboard tabs — scrollable, only on non-mobile or when space exists */}
       {!isMobile && (
         <div
@@ -199,207 +197,217 @@ export default function Header({
         </div>
       )}
 
-      {/* View toggle */}
       <div
         style={{
           display: "flex",
-          gap: 2,
-          background: "var(--surface)",
-          borderRadius: 10,
-          padding: 3,
-          flexShrink: 0,
+          justifyContent: "flex-end",
+          width: "100%",
+          gap: "1em",
         }}
       >
-        {(["board", "calendar", "gantt"] as ViewType[]).map((v, i) => {
-          const icons = [
-            "fa-table-columns",
-            "fa-regular fa-calendar",
-            "fa-bars-progress",
-          ];
-          const labels = ["Board", "Calendar", "Gantt"];
-          return (
-            <button
-              key={v}
-              onClick={() => onViewChange(v)}
-              style={{
-                border: "none",
-                background: view === v ? "var(--accent)" : "transparent",
-                color: view === v ? "#fff" : "var(--muted)",
-                fontFamily: "DM Sans,sans-serif",
-                fontSize: ".74rem",
-                fontWeight: 500,
-                padding: isMobile ? "6px 9px" : "6px 12px",
-                borderRadius: 7,
-                cursor: "pointer",
-                transition: "all .2s",
-                whiteSpace: "nowrap",
-                boxShadow: view === v ? "0 0 16px rgba(111,95,255,.4)" : "none",
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <i className={`fa-solid ${icons[i]}`}></i>
-              {!isMobile && labels[i]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Desktop action buttons */}
-      {!isMobile && (
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          <GhostBtn onClick={onOpenBg}>
-            <i className="fa-solid fa-image"></i> BG
-          </GhostBtn>
-          <GhostBtn onClick={onOpenArchive}>
-            <i className="fa-solid fa-box-archive"></i> Archive
-          </GhostBtn>
-          <GhostBtn onClick={onSaveJson}>
-            <i className="fa-solid fa-download"></i> Save
-          </GhostBtn>
-          <GhostBtn onClick={() => fileRef.current?.click()}>
-            <i className="fa-solid fa-upload"></i> Load
-          </GhostBtn>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) {
-                onLoadJson(f);
-                e.target.value = "";
-              }
-            }}
-          />
-        </div>
-      )}
-
-      {/* Mobile hamburger */}
-      {isMobile && (
-        <div ref={menuRef} style={{ position: "relative", flexShrink: 0 }}>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Menu"
-            style={{
-              background: menuOpen ? "var(--surface2)" : "var(--surface)",
-              border: `1px solid ${menuOpen ? "var(--accent)" : "var(--border)"}`,
-              borderRadius: 8,
-              width: 34,
-              height: 34,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all .2s",
-            }}
-          >
-            <HamIcon open={menuOpen} />
-          </button>
-
-          {menuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "calc(100% + 8px)",
-                background: "rgba(18,18,28,.98)",
-                border: "1px solid var(--border)",
-                borderRadius: 14,
-                padding: 8,
-                minWidth: 220,
-                boxShadow: "0 20px 60px rgba(0,0,0,.6)",
-                backdropFilter: "blur(20px)",
-                animation: "menuIn .18s cubic-bezier(.34,1.56,.64,1)",
-                zIndex: 200,
-              }}
-            >
-              {/* Dashboard switcher */}
-              <div
+        {/* View toggle */}
+        <div
+          style={{
+            display: "flex",
+            gap: 2,
+            background: "var(--surface)",
+            borderRadius: 10,
+            padding: 3,
+            flexShrink: 0,
+          }}
+        >
+          {(["board", "calendar", "gantt"] as ViewType[]).map((v, i) => {
+            const icons = [
+              "fa-table-columns",
+              "fa-regular fa-calendar",
+              "fa-bars-progress",
+            ];
+            const labels = ["Board", "Calendar", "Gantt"];
+            return (
+              <button
+                key={v}
+                onClick={() => onViewChange(v)}
                 style={{
-                  padding: "4px 10px 6px",
-                  fontSize: ".62rem",
-                  color: "var(--muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
+                  border: "none",
+                  background: view === v ? "var(--accent)" : "transparent",
+                  color: view === v ? "#fff" : "var(--muted)",
+                  fontFamily: "DM Sans,sans-serif",
+                  fontSize: ".74rem",
+                  fontWeight: 500,
+                  padding: isMobile ? "6px 9px" : "6px 12px",
+                  borderRadius: 7,
+                  cursor: "pointer",
+                  transition: "all .2s",
+                  whiteSpace: "nowrap",
+                  boxShadow:
+                    view === v ? "0 0 16px rgba(111,95,255,.4)" : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
                 }}
               >
-                Dashboards
-              </div>
-              {dashIds.map((id) => (
+                <i className={`fa-solid ${icons[i]}`}></i>
+                {!isMobile && labels[i]}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Desktop action buttons */}
+        {!isMobile && (
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            <GhostBtn onClick={onOpenBg}>
+              <i className="fa-solid fa-image"></i> BG
+            </GhostBtn>
+            <GhostBtn onClick={onOpenArchive}>
+              <i className="fa-solid fa-box-archive"></i> Archive
+            </GhostBtn>
+            <GhostBtn onClick={onSaveJson}>
+              <i className="fa-solid fa-download"></i> Save
+            </GhostBtn>
+            <GhostBtn onClick={() => fileRef.current?.click()}>
+              <i className="fa-solid fa-upload"></i> Load
+            </GhostBtn>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  onLoadJson(f);
+                  e.target.value = "";
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* Mobile hamburger */}
+        {isMobile && (
+          <div ref={menuRef} style={{ position: "relative", flexShrink: 0 }}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu"
+              style={{
+                background: menuOpen ? "var(--surface2)" : "var(--surface)",
+                border: `1px solid ${menuOpen ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: 8,
+                width: 34,
+                height: 34,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all .2s",
+              }}
+            >
+              <HamIcon open={menuOpen} />
+            </button>
+
+            {menuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "calc(100% + 8px)",
+                  background: "rgba(18,18,28,.98)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  padding: 8,
+                  minWidth: 220,
+                  boxShadow: "0 20px 60px rgba(0,0,0,.6)",
+                  backdropFilter: "blur(20px)",
+                  animation: "menuIn .18s cubic-bezier(.34,1.56,.64,1)",
+                  zIndex: 200,
+                }}
+              >
+                {/* Dashboard switcher */}
+                <div
+                  style={{
+                    padding: "4px 10px 6px",
+                    fontSize: ".62rem",
+                    color: "var(--muted)",
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  Dashboards
+                </div>
+                {dashIds.map((id) => (
+                  <DI
+                    key={id}
+                    icon="fa-table-columns"
+                    label={G.dashboards[id].name}
+                    active={id === G.activeDash}
+                    onClick={() => {
+                      onSwitchDash(id);
+                      setMenuOpen(false);
+                    }}
+                  />
+                ))}
                 <DI
-                  key={id}
-                  icon="fa-table-columns"
-                  label={G.dashboards[id].name}
-                  active={id === G.activeDash}
+                  icon="fa-plus"
+                  label="New Dashboard"
                   onClick={() => {
-                    onSwitchDash(id);
+                    onNewDash();
                     setMenuOpen(false);
                   }}
                 />
-              ))}
-              <DI
-                icon="fa-plus"
-                label="New Dashboard"
-                onClick={() => {
-                  onNewDash();
-                  setMenuOpen(false);
-                }}
-              />
-              <Sep />
+                <Sep />
 
-              {/* Actions */}
-              <DI
-                icon="fa-image"
-                label="Background"
-                onClick={() => {
-                  onOpenBg();
-                  setMenuOpen(false);
-                }}
-              />
-              <DI
-                icon="fa-box-archive"
-                label="Archive"
-                onClick={() => {
-                  onOpenArchive();
-                  setMenuOpen(false);
-                }}
-              />
-              <DI
-                icon="fa-download"
-                label="Save JSON"
-                onClick={() => {
-                  onSaveJson();
-                  setMenuOpen(false);
-                }}
-              />
-              <DI
-                icon="fa-upload"
-                label="Load JSON"
-                onClick={() => {
-                  fileRef.current?.click();
-                  setMenuOpen(false);
-                }}
-              />
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".json"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) {
-                    onLoadJson(f);
-                    e.target.value = "";
-                  }
-                }}
-              />
-            </div>
-          )}
-        </div>
-      )}
+                {/* Actions */}
+                <DI
+                  icon="fa-image"
+                  label="Background"
+                  onClick={() => {
+                    onOpenBg();
+                    setMenuOpen(false);
+                  }}
+                />
+                <DI
+                  icon="fa-box-archive"
+                  label="Archive"
+                  onClick={() => {
+                    onOpenArchive();
+                    setMenuOpen(false);
+                  }}
+                />
+                <DI
+                  icon="fa-download"
+                  label="Save JSON"
+                  onClick={() => {
+                    onSaveJson();
+                    setMenuOpen(false);
+                  }}
+                />
+                <DI
+                  icon="fa-upload"
+                  label="Load JSON"
+                  onClick={() => {
+                    fileRef.current?.click();
+                    setMenuOpen(false);
+                  }}
+                />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".json"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      onLoadJson(f);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </header>
   );
 }
