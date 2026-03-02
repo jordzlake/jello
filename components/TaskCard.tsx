@@ -1,0 +1,108 @@
+'use client';
+import { Task, Palette } from '@/lib/types';
+import { fmtDate } from '@/lib/utils';
+
+interface Props {
+  task: Task; li: number; ti: number; palette: Palette;
+  onToggle: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
+}
+
+export default function TaskCard({ task: t, li, ti, palette, onToggle, onContextMenu }: Props) {
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const endBadgeCls = () => {
+    if (!t.endDate) return 'date';
+    const due = new Date(t.endDate+'T00:00:00');
+    if (!t.done && due < today) return 'overdue';
+    if (!t.done && due.getTime()===today.getTime()) return 'today';
+    return 'date';
+  };
+
+  const dur = t.startDate && t.endDate
+    ? Math.max(1, Math.round((new Date(t.endDate+'T00:00:00').getTime()-new Date(t.startDate+'T00:00:00').getTime())/86400000)+1)
+    : null;
+
+  const prog = t.progress ?? 0;
+
+  const badgeStyle = (type: 'date'|'overdue'|'today'|'time'|'dur'): React.CSSProperties => {
+    const base: React.CSSProperties = { display:'inline-flex',alignItems:'center',gap:3,fontSize:'.62rem',padding:'2px 6px',borderRadius:20,border:'1px solid',width:'fit-content' };
+    switch(type) {
+      case 'overdue': return {...base,background:'rgba(255,80,80,.12)',color:'#ff6b6b',borderColor:'rgba(255,80,80,.2)'};
+      case 'today':   return {...base,background:'rgba(255,200,80,.12)',color:'#ffc850',borderColor:'rgba(255,200,80,.2)'};
+      case 'time':    return {...base,background:'rgba(0,210,106,.1)',color:'#00d26a',borderColor:'rgba(0,210,106,.2)'};
+      case 'dur':     return {...base,background:'rgba(79,172,254,.1)',color:'#4facfe',borderColor:'rgba(79,172,254,.2)'};
+      default:        return {...base,background:'rgba(111,95,255,.12)',color:'#a090ff',borderColor:'rgba(111,95,255,.2)'};
+    }
+  };
+
+  return (
+    <div
+      draggable
+      data-li={li} data-ti={ti}
+      onDragStart={e => {
+        e.stopPropagation();
+        e.dataTransfer.setData('taskLi', String(li));
+        e.dataTransfer.setData('taskTi', String(ti));
+        e.dataTransfer.setData('drag', 'task');
+        e.dataTransfer.effectAllowed = 'move';
+        (e.currentTarget as HTMLElement).classList.add('task-dragging');
+      }}
+      onDragEnd={e => (e.currentTarget as HTMLElement).classList.remove('task-dragging')}
+      onContextMenu={onContextMenu}
+      style={{
+        background: t.done ? 'var(--done-bg)' : 'var(--surface)',
+        border: `1px solid ${t.done ? 'rgba(255,255,255,.04)' : 'var(--border)'}`,
+        borderRadius: 'var(--rsm)', padding:'10px 11px',
+        display:'flex', flexDirection:'column', gap:7,
+        cursor:'grab', transition:'all .2s',
+        animation:'taskIn .28s cubic-bezier(.34,1.56,.64,1)',
+      }}
+      onMouseEnter={e=>{if(!t.done){const el=e.currentTarget;el.style.background='var(--surface2)';el.style.borderColor='rgba(111,95,255,.3)';el.style.transform='translateY(-1px)';el.style.boxShadow='0 4px 16px rgba(0,0,0,.28)';}}}
+      onMouseLeave={e=>{const el=e.currentTarget;el.style.background=t.done?'var(--done-bg)':'var(--surface)';el.style.borderColor=t.done?'rgba(255,255,255,.04)':'var(--border)';el.style.transform='';el.style.boxShadow='';}}
+    >
+      {/* Top row */}
+      <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+        <div onClick={onToggle} style={{
+          width:17,height:17,borderRadius:5,flexShrink:0,
+          border: t.done?'none':'2px solid var(--border)',
+          background:t.done?`linear-gradient(135deg,${palette.c1},${palette.c2})`:'transparent',
+          cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
+          transition:'all .22s',marginTop:1,
+        }}>
+          {t.done && <i className="fa-solid fa-check" style={{fontSize:'.56rem',color:'#fff'}}></i>}
+        </div>
+        {/* Task text — no truncation, full wrapping */}
+        <div style={{
+          fontSize:'.84rem',lineHeight:1.45,wordBreak:'break-word',flex:1,
+          color:t.done?'var(--done-txt)':'var(--text)',
+          textDecoration:t.done?'line-through':'none',
+        }}>
+          {t.text}
+        </div>
+      </div>
+
+      {/* Meta badges */}
+      {(t.startDate||t.endDate||(t.startTime||t.endTime)||dur) ? (
+        <div style={{display:'flex',flexWrap:'wrap',gap:4,marginLeft:25}}>
+          {t.startDate && <span style={badgeStyle('date')}><i className="fa-solid fa-play" style={{fontSize:'.5rem'}}></i> {fmtDate(t.startDate)}</span>}
+          {t.endDate && <span style={badgeStyle(endBadgeCls())}><i className="fa-regular fa-calendar"></i> {fmtDate(t.endDate)}</span>}
+          {(t.startTime||t.endTime) && <span style={badgeStyle('time')}><i className="fa-regular fa-clock"></i> {t.startTime||''}{t.startTime&&t.endTime?'–':''}{t.endTime||''}</span>}
+          {dur && <span style={badgeStyle('dur')}><i className="fa-solid fa-ruler"></i> {dur}d</span>}
+        </div>
+      ) : null}
+
+      {/* Progress bar */}
+      {(prog>0||t.startDate) ? (
+        <div style={{marginLeft:25}}>
+          <div style={{height:5,background:'rgba(255,255,255,.08)',borderRadius:3,overflow:'hidden',marginTop:2}}>
+            <div style={{height:'100%',borderRadius:3,background:'linear-gradient(90deg,#6f5fff,#ff5fa0)',transition:'width .4s',width:`${prog}%`}} />
+          </div>
+          <div style={{fontSize:'.6rem',color:'var(--muted)',display:'flex',justifyContent:'space-between',marginTop:2}}>
+            <span>Progress</span><span>{prog}%</span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

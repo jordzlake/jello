@@ -1,0 +1,43 @@
+:root {
+  --bg: #0b0b13;
+  --surface: rgba(255,255,255,.05);
+  --surface2: rgba(255,255,255,.09);
+  --border: rgba(255,255,255,.1);
+  --text: #eeeaff;
+  --muted: rgba(238,234,255,.42);
+  --accent: #6f5fff;
+  --pink: #ff5fa0;
+  --green: #00d26a;
+  --radius: 16px;
+  --rsm: 10px;
+  --done-bg: rgba(0,0,0,.38);
+  --done-txt: rgba(238,234,255,.28);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:3px; }
+
+/* Animations */
+@keyframes listIn { from{opacity:0;transform:translateY(16px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes taskIn { from{opacity:0;transform:scale(.92) translateX(-8px)} to{opacity:1;transform:scale(1) translateX(0)} }
+@keyframes menuIn { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+@keyframes modalIn { from{opacity:0;transform:scale(.9) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes logoGlow {
+  from { filter:drop-shadow(0 0 8px rgba(0,210,106,.5)) drop-shadow(0 0 20px rgba(255,129,245,.3)); }
+  to   { filter:drop-shadow(0 0 16px rgba(0,210,106,.9)) drop-shadow(0 0 40px rgba(255,129,245,.7)); }
+}
+
+/* Drag states */
+.task-dragging { opacity:.3; transform:rotate(2deg); }
+.list-dragging { opacity:.3; transform:rotate(2deg) scale(1.02); }
+.list-drag-over { outline:2px solid var(--accent)!important; box-shadow:0 0 0 4px rgba(111,95,255,.2)!important; }
+
+/* Date inputs */
+input[type="date"], input[type="time"] { color-scheme:dark; }
+input[type="range"] { accent-color:var(--accent); }
