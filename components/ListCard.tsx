@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { JList, Task, Palette } from "@/lib/types";
 import TaskCard from "./TaskCard";
 
@@ -46,37 +46,52 @@ export default function ListCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const tasksRef = useRef<HTMLDivElement>(null);
 
-  const done = list.tasks.filter((t) => t.done).length;
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [menuOpen]);
+
+  const doneCount = list.tasks.filter((t) => t.done).length;
 
   const titleDone = () => {
     setEditing(false);
     onUpdateTitle(titleVal.trim() || list.title);
   };
 
-  const getDropIndex = (clientY: number): number => {
+  const getDropIndex = (e: React.DragEvent): number => {
     const container = tasksRef.current;
     if (!container) return list.tasks.length;
-    const wrappers = Array.from(
-      container.querySelectorAll<HTMLElement>("[data-task-index]"),
+    const taskEls = Array.from(
+      container.querySelectorAll<HTMLElement>("[data-ti]"),
     );
-    if (wrappers.length === 0) return 0;
-    for (const wrapper of wrappers) {
-      const rect = wrapper.getBoundingClientRect();
-      if (clientY < rect.top + rect.height / 2) {
-        return parseInt(wrapper.getAttribute("data-task-index") || "0");
-      }
+    if (taskEls.length === 0) return 0;
+
+    for (let i = 0; i < taskEls.length; i++) {
+      const rect = taskEls[i].getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      if (e.clientY < midY) return i;
     }
     return list.tasks.length;
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (isListDragging) return;
+    // Identify what is being dragged via dataTransfer types if possible,
+    // or rely on the isListDragging prop from parent
+    if (isListDragging) {
+      setIsDragOver(true);
+      return;
+    }
+
     setIsDragOver(true);
-    setDropIndex(getDropIndex(e.clientY));
+    setDropIndex(getDropIndex(e));
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    // Only reset if we are actually leaving the list element
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
       setDropIndex(null);
@@ -87,28 +102,29 @@ export default function ListCard({
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    setDropIndex(null);
 
-    const drag = e.dataTransfer.getData("drag");
-    if (drag === "task") {
+    const dragType = e.dataTransfer.getData("drag");
+
+    if (dragType === "task") {
       const fromLi = parseInt(e.dataTransfer.getData("taskLi"));
       const fromTi = parseInt(e.dataTransfer.getData("taskTi"));
+      const insertAt = dropIndex ?? list.tasks.length;
       if (!isNaN(fromLi) && !isNaN(fromTi)) {
-        const visualIndex = getDropIndex(e.clientY);
-        onMoveTask(fromLi, fromTi, visualIndex);
+        onMoveTask(fromLi, fromTi, insertAt);
       }
-    } else if (drag === "list") {
+    } else if (dragType === "list") {
       const fromLi = parseInt(e.dataTransfer.getData("listLi"));
-      if (!isNaN(fromLi) && fromLi !== li) onMoveList(fromLi, li);
+      // Prevent moving a list onto itself
+      if (!isNaN(fromLi) && fromLi !== li) {
+        onMoveList(fromLi, li);
+      }
     }
+    setDropIndex(null);
   };
 
   return (
     <div
       data-li={li}
-      className={
-        isListDragging ? "list-dragging" : isDragOver ? "list-drag-over" : ""
-      }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -122,35 +138,25 @@ export default function ListCard({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        animation: "listIn .35s cubic-bezier(.34,1.56,.64,1)",
-        transition: "box-shadow .3s,opacity .2s,transform .2s",
-        boxShadow: isDragOver ? "0 0 0 4px rgba(111,95,255,.2)" : undefined,
-      }}
-      onMouseEnter={(e) => {
-        if (!isDragOver)
-          e.currentTarget.style.boxShadow = "0 8px 40px rgba(111,95,255,.13)";
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragOver) e.currentTarget.style.boxShadow = "";
+        position: "relative",
+        opacity: isListDragging ? 0.4 : 1,
+        transition: "all .2s ease",
+        boxShadow: isDragOver ? "0 0 0 2px var(--accent)" : "none",
+        transform: isDragOver && isListDragging ? "scale(1.02)" : "none",
       }}
     >
-      {/* Banner */}
+      {/* Banner Area */}
       <div
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest(".list-drag-handle")) return;
-          onOpenStyle();
-        }}
+        onClick={onOpenStyle}
         style={{
           height: 70,
           position: "relative",
           overflow: "hidden",
           background: list.bannerUrl
-            ? undefined
+            ? `url(${list.bannerUrl})`
             : `linear-gradient(135deg,${palette.c1},${palette.c2})`,
-          backgroundImage: list.bannerUrl ? `url(${list.bannerUrl})` : "none",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          flexShrink: 0,
           cursor: "pointer",
         }}
       >
@@ -159,65 +165,33 @@ export default function ListCard({
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to bottom,transparent 30%,rgba(11,11,19,.55) 100%)",
+              "linear-gradient(to bottom,transparent, rgba(11,11,19,.4))",
           }}
         />
-        <div
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 5,
-            opacity: 0,
-            transition: "opacity .2s",
-            background: "rgba(0,0,0,.5)",
-            fontSize: ".68rem",
-            color: "#fff",
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            fontWeight: 600,
-          }}
-        >
-          <i className="fa-solid fa-image"></i> Change Banner
-        </div>
+
+        {/* List Drag Handle */}
         <div
           className="list-drag-handle"
           draggable
           onDragStart={(e) => {
-            e.stopPropagation();
             e.dataTransfer.setData("drag", "list");
             e.dataTransfer.setData("listLi", String(li));
-            e.dataTransfer.effectAllowed = "move";
             onListDragStart();
           }}
           onDragEnd={onListDragEnd}
+          onClick={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            top: 4,
+            top: 6,
             left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 3,
-            color: "rgba(255,255,255,.32)",
-            fontSize: ".58rem",
-            letterSpacing: 3,
+            zIndex: 10,
+            color: "rgba(255,255,255,0.4)",
             cursor: "grab",
-            transition: "color .2s",
-            userSelect: "none",
-            padding: "4px 8px",
+            padding: "4px 12px",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = "rgba(255,255,255,.85)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = "rgba(255,255,255,.32)")
-          }
         >
-          ⠿ ⠿ ⠿
+          ⠿
         </div>
       </div>
 
@@ -226,19 +200,10 @@ export default function ListCard({
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "10px 12px 7px",
-          gap: 7,
+          padding: "12px 12px 8px",
+          gap: 8,
         }}
       >
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            flexShrink: 0,
-            background: `linear-gradient(135deg,${palette.c1},${palette.c2})`,
-          }}
-        />
         {editing ? (
           <input
             ref={inputRef}
@@ -254,159 +219,99 @@ export default function ListCard({
               }
             }}
             style={{
-              fontFamily: "Syne,sans-serif",
-              fontWeight: 700,
-              fontSize: ".88rem",
               flex: 1,
-              minWidth: 0,
               background: "var(--surface2)",
               border: "1px solid var(--accent)",
-              borderRadius: 6,
+              borderRadius: 4,
               color: "var(--text)",
-              padding: "2px 8px",
+              padding: "2px 6px",
               outline: "none",
+              fontSize: ".85rem",
             }}
           />
         ) : (
           <div
             onClick={() => {
               setEditing(true);
-              setTitleVal(list.title);
-              setTimeout(() => inputRef.current?.select(), 50);
+              setTimeout(() => inputRef.current?.focus(), 10);
             }}
             style={{
-              fontFamily: "Syne,sans-serif",
               fontWeight: 700,
               fontSize: ".88rem",
-              cursor: "pointer",
               flex: 1,
-              minWidth: 0,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              userSelect: "none",
+              cursor: "text",
             }}
           >
             {list.title}
           </div>
         )}
-        <div
+        <div style={{ fontSize: ".65rem", opacity: 0.6 }}>
+          {doneCount}/{list.tasks.length}
+        </div>
+
+        {/* Menu Toggle */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
           style={{
-            fontSize: ".64rem",
+            background: "none",
+            border: "none",
             color: "var(--muted)",
-            background: "var(--surface)",
-            borderRadius: 20,
-            padding: "2px 7px",
-            flexShrink: 0,
+            cursor: "pointer",
           }}
         >
-          {done}/{list.tasks.length}
-        </div>
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(!menuOpen);
-            }}
+          <i className="fa-solid fa-ellipsis-vertical" />
+        </button>
+
+        {menuOpen && (
+          <div
             style={{
-              background: "none",
-              border: "none",
-              color: "var(--muted)",
-              cursor: "pointer",
-              fontSize: ".9rem",
-              padding: "3px 5px",
-              borderRadius: 6,
-              transition: "all .2s",
+              position: "absolute",
+              right: 10,
+              top: 110,
+              zIndex: 100,
+              background: "#1a1a26",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: 4,
+              minWidth: 160,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
             }}
           >
-            <i className="fa-solid fa-ellipsis-vertical"></i>
-          </button>
-          {menuOpen && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "calc(100% + 4px)",
-                zIndex: 400,
-                background: "rgba(16,16,26,.97)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
-                padding: 5,
-                minWidth: 188,
-                boxShadow: "0 20px 60px rgba(0,0,0,.6)",
-                backdropFilter: "blur(20px)",
-                animation: "menuIn .15s ease",
-              }}
-            >
-              <MI
-                icon="fa-palette"
-                label="Customize"
-                onClick={() => {
-                  onOpenStyle();
-                  setMenuOpen(false);
-                }}
-              />
-              <MI
-                icon="fa-plus"
-                label="Add Task"
-                onClick={() => {
-                  onOpenTask();
-                  setMenuOpen(false);
-                }}
-              />
-              <div
-                style={{
-                  height: 1,
-                  background: "var(--border)",
-                  margin: "4px 0",
-                }}
-              />
-              <MI
-                icon="fa-check-double"
-                label="Archive Done"
-                onClick={() => {
-                  onArchiveDone();
-                  setMenuOpen(false);
-                }}
-              />
-              <MI
-                icon="fa-box-archive"
-                label="Archive List"
-                danger
-                onClick={() => {
-                  onArchiveList();
-                  setMenuOpen(false);
-                }}
-              />
-            </div>
-          )}
-        </div>
+            <MI icon="fa-check" label="Archive Done" onClick={onArchiveDone} />
+            <MI
+              icon="fa-trash"
+              label="Archive List"
+              danger
+              onClick={onArchiveList}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Tasks */}
+      {/* Task List */}
       <div
         ref={tasksRef}
         style={{
           padding: "0 8px",
           display: "flex",
           flexDirection: "column",
-          overflowY: "auto",
-          maxHeight: 400,
           flex: 1,
-          minHeight: 8,
+          minHeight: 20,
         }}
       >
         {list.tasks.map((task, ti) => (
-          <div key={task.id} data-task-index={ti} style={{ paddingBottom: 6 }}>
-            {isDragOver && dropIndex === ti && (
+          <div key={task.id} data-ti={ti}>
+            {/* Indicator for Task drop position */}
+            {!isListDragging && isDragOver && dropIndex === ti && (
               <div
                 style={{
-                  height: 3,
-                  borderRadius: 2,
+                  height: 2,
                   background: "var(--accent)",
-                  marginBottom: 4,
-                  boxShadow: "0 0 8px rgba(111,95,255,.6)",
+                  margin: "4px 0",
+                  borderRadius: 2,
                 }}
               />
             )}
@@ -418,72 +323,54 @@ export default function ListCard({
               onToggle={() => onToggle(ti)}
               onContextMenu={(e) => onContextMenu(e, ti)}
             />
+            <div style={{ height: 6 }} />
           </div>
         ))}
-        {isDragOver &&
-          dropIndex === list.tasks.length &&
-          list.tasks.length > 0 && (
-            <div
-              style={{
-                height: 3,
-                borderRadius: 2,
-                background: "var(--accent)",
-                marginBottom: 6,
-                boxShadow: "0 0 8px rgba(111,95,255,.6)",
-              }}
-            />
-          )}
-        {list.tasks.length === 0 && (
+
+        {/* Indicator for end of list */}
+        {!isListDragging && isDragOver && dropIndex === list.tasks.length && (
           <div
             style={{
-              border: "1px dashed rgba(255,255,255,.08)",
-              borderRadius: "var(--rsm)",
-              padding: "12px 8px",
+              height: 2,
+              background: "var(--accent)",
+              margin: "4px 0",
+              borderRadius: 2,
+            }}
+          />
+        )}
+
+        {list.tasks.length === 0 && !isListDragging && (
+          <div
+            style={{
+              padding: 20,
               textAlign: "center",
-              fontSize: ".72rem",
+              fontSize: ".7rem",
               color: "var(--muted)",
-              opacity: isDragOver ? 0.8 : 0.4,
-              transition: "opacity .2s",
-              marginBottom: 6,
+              border: "1px dashed var(--border)",
+              borderRadius: 8,
             }}
           >
-            {isDragOver ? "⬇ Drop here" : "No tasks yet"}
+            {isDragOver ? "Drop Task Here" : "Empty List"}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div style={{ padding: "6px 8px 11px" }}>
+      <div style={{ padding: 10 }}>
         <button
           onClick={() => onOpenTask()}
           style={{
             width: "100%",
-            background: "transparent",
-            border: "1px dashed rgba(255,255,255,.1)",
+            padding: 8,
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid var(--border)",
             color: "var(--muted)",
-            fontFamily: "DM Sans,sans-serif",
-            fontSize: ".76rem",
-            padding: 7,
-            borderRadius: "var(--rsm)",
             cursor: "pointer",
-            transition: "all .2s",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 5,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--accent)";
-            e.currentTarget.style.color = "var(--accent)";
-            e.currentTarget.style.background = "rgba(111,95,255,.07)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "rgba(255,255,255,.1)";
-            e.currentTarget.style.color = "var(--muted)";
-            e.currentTarget.style.background = "transparent";
+            fontSize: ".75rem",
           }}
         >
-          <i className="fa-solid fa-plus"></i> Add task
+          + Add Task
         </button>
       </div>
     </div>
@@ -501,37 +388,25 @@ function MI({
   danger?: boolean;
   onClick: () => void;
 }) {
-  const [hov, setHov] = useState(false);
   return (
     <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       style={{
-        padding: "7px 11px",
-        borderRadius: 8,
-        fontSize: ".78rem",
+        padding: "8px 12px",
+        borderRadius: 6,
+        fontSize: ".75rem",
         cursor: "pointer",
-        transition: "all .15s",
         display: "flex",
         alignItems: "center",
-        gap: 8,
-        color: danger ? "#ff6b6b" : "var(--text)",
-        background: hov
-          ? danger
-            ? "rgba(255,107,107,.1)"
-            : "var(--surface2)"
-          : "transparent",
+        gap: 10,
+        color: danger ? "#ff4d4d" : "inherit",
       }}
+      className="menu-item-hover"
     >
-      <i
-        className={`fa-solid ${icon}`}
-        style={{
-          width: 13,
-          textAlign: "center",
-          color: danger ? "#ff6b6b" : "var(--muted)",
-        }}
-      ></i>
+      <i className={`fa-solid ${icon}`} style={{ width: 14 }} />
       {label}
     </div>
   );
