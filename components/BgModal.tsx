@@ -1,81 +1,314 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Modal, { MFooter, BtnGhost, BtnPrimary } from './Modal';
+"use client";
+import { useState, useEffect, useRef } from "react";
+import Modal, { MFooter, BtnGhost, BtnPrimary } from "./Modal";
 
-interface Props { open:boolean; onClose:()=>void; onSelect:(url:string)=>void; onClear:()=>void; }
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  onSelect: (url: string) => void;
+  onClear: () => void;
+}
 
 const PER_PAGE = 9;
-const W = 860, H = 540;
+const API_KEY = "55120085-59846e24989333f25ec07ff93";
 
-function picsumUrl(id: string | number) {
-  return `https://picsum.photos/id/${id}/${W}/${H}`;
+interface PBImg {
+  id: number;
+  thumb: string;
+  full: string;
 }
 
 export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
+  const [search, setSearch] = useState("nature");
   const [page, setPage] = useState(1);
-  const [imgs, setImgs] = useState<{id:string; thumb:string; full:string}[]>([]);
+  const [imgs, setImgs] = useState<PBImg[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => { if (open) { setPage(1); load(1); } }, [open]);
+  useEffect(() => {
+    if (open) {
+      setPage(1);
+      fetchImgs(search, 1);
+    }
+  }, [open]);
 
-  const load = async (pg: number) => {
+  const fetchImgs = async (q: string, pg: number) => {
+    if (!API_KEY) {
+      setError("Add NEXT_PUBLIC_PIXABAY_KEY to your .env.local file.");
+      return;
+    }
     setLoading(true);
+    setError("");
     try {
-      const res = await fetch(`https://picsum.photos/v2/list?page=${pg}&limit=${PER_PAGE}`);
+      const url = `https://pixabay.com/api/?key=${API_KEY}&q=${encodeURIComponent(q)}&image_type=photo&orientation=horizontal&per_page=${PER_PAGE}&page=${pg}&safesearch=true`;
+      const res = await fetch(url);
       const data = await res.json();
-      setImgs(data.map((item: {id:string}) => ({
-        id: item.id,
-        thumb: `https://picsum.photos/id/${item.id}/400/225`,
-        full: picsumUrl(item.id),
-      })));
-    } catch { /* network error — keep showing whatever was there */ }
+      if (data.error) {
+        setError(data.error);
+        setImgs([]);
+      } else
+        setImgs(
+          (data.hits || []).map(
+            (h: {
+              id: number;
+              webformatURL: string;
+              largeImageURL: string;
+            }) => ({
+              id: h.id,
+              thumb: h.webformatURL,
+              full: h.largeImageURL,
+            }),
+          ),
+        );
+    } catch {
+      setError("Network error — try again.");
+    }
     setLoading(false);
   };
 
-  const goTo = (pg: number) => { setPage(pg); load(pg); };
+  const handleSearch = (v: string) => {
+    setSearch(v);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      setPage(1);
+      fetchImgs(v || "nature", 1);
+    }, 500);
+  };
+
+  const goTo = (pg: number) => {
+    setPage(pg);
+    fetchImgs(search || "nature", pg);
+  };
 
   return (
-    <Modal open={open} onClose={onClose} title={<><i className="fa-solid fa-earth-americas" style={{color:'var(--accent)'}}></i> App Background</>}>
-      <div style={{fontSize:'.65rem',color:'var(--muted)',marginBottom:8}}>
-        Browse photos — each image is permanent by ID
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={
+        <>
+          <i
+            className="fa-solid fa-earth-americas"
+            style={{ color: "var(--accent)" }}
+          ></i>{" "}
+          App Background
+        </>
+      }
+    >
+      <div style={{ position: "relative", marginBottom: 8 }}>
+        <i
+          className="fa-solid fa-magnifying-glass"
+          style={{
+            position: "absolute",
+            left: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "var(--muted)",
+            fontSize: ".76rem",
+            pointerEvents: "none",
+          }}
+        ></i>
+        <input
+          value={search}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="mountains, cyberpunk, ocean, space…"
+          style={{
+            width: "100%",
+            background: "var(--surface2)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--rsm)",
+            color: "var(--text)",
+            fontFamily: "DM Sans,sans-serif",
+            fontSize: ".84rem",
+            padding: "8px 10px 8px 32px",
+            outline: "none",
+          }}
+        />
       </div>
-      {loading ? (
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:180}}>
-          <i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)',fontSize:'1.2rem'}}></i>
-        </div>
-      ) : (
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5,marginBottom:8}}>
-          {imgs.map(img => (
-            <ImgCell key={img.id} thumb={img.thumb} onSelect={() => onSelect(img.full)} />
-          ))}
+      <div
+        style={{ fontSize: ".65rem", color: "var(--muted)", marginBottom: 8 }}
+      >
+        Powered by Pixabay
+      </div>
+
+      {error && (
+        <div
+          style={{
+            color: "#ff6b6b",
+            fontSize: ".75rem",
+            marginBottom: 8,
+            padding: "8px 10px",
+            background: "rgba(255,80,80,.08)",
+            borderRadius: 6,
+          }}
+        >
+          {error}
         </div>
       )}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:10}}>
-        <PageBtn disabled={page<=1} onClick={()=>goTo(page-1)}>← Prev</PageBtn>
-        <span style={{fontSize:'.72rem',color:'var(--muted)'}}>Page {page}</span>
-        <PageBtn onClick={()=>goTo(page+1)}>Next →</PageBtn>
+
+      {loading ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: 180,
+          }}
+        >
+          <i
+            className="fa-solid fa-spinner"
+            style={{
+              animation: "spin .8s linear infinite",
+              color: "var(--muted)",
+              fontSize: "1.2rem",
+            }}
+          ></i>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3,1fr)",
+            gap: 5,
+            marginBottom: 8,
+          }}
+        >
+          {imgs.map((img) => (
+            <ImgCell
+              key={img.id}
+              thumb={img.thumb}
+              onSelect={() => onSelect(img.full)}
+            />
+          ))}
+          {imgs.length === 0 && !loading && !error && (
+            <div
+              style={{
+                gridColumn: "1/-1",
+                textAlign: "center",
+                color: "var(--muted)",
+                fontSize: ".78rem",
+                padding: "40px 0",
+              }}
+            >
+              No results for "{search}"
+            </div>
+          )}
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          marginBottom: 10,
+        }}
+      >
+        <PageBtn disabled={page <= 1} onClick={() => goTo(page - 1)}>
+          ← Prev
+        </PageBtn>
+        <span style={{ fontSize: ".72rem", color: "var(--muted)" }}>
+          Page {page}
+        </span>
+        <PageBtn onClick={() => goTo(page + 1)}>Next →</PageBtn>
       </div>
-      <MFooter><BtnGhost onClick={onClear}>Clear</BtnGhost><BtnPrimary onClick={onClose}>Done</BtnPrimary></MFooter>
+      <MFooter>
+        <BtnGhost onClick={onClear}>Clear</BtnGhost>
+        <BtnPrimary onClick={onClose}>Done</BtnPrimary>
+      </MFooter>
     </Modal>
   );
 }
 
-function ImgCell({ thumb, onSelect }: { thumb:string; onSelect:()=>void }) {
+function ImgCell({ thumb, onSelect }: { thumb: string; onSelect: () => void }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div onClick={onSelect}
-      style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
-      onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--accent)';e.currentTarget.style.transform='scale(1.04)';}}
-      onMouseLeave={e=>{e.currentTarget.style.borderColor='transparent';e.currentTarget.style.transform='';}}
+    <div
+      onClick={onSelect}
+      style={{
+        aspectRatio: "16/9",
+        borderRadius: 7,
+        overflow: "hidden",
+        background: "var(--surface2)",
+        cursor: "pointer",
+        position: "relative",
+        border: "2px solid transparent",
+        transition: "all .18s",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--accent)";
+        e.currentTarget.style.transform = "scale(1.04)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "transparent";
+        e.currentTarget.style.transform = "";
+      }}
     >
-      {!loaded && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)',fontSize:'.72rem'}}></i></div>}
+      {!loaded && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <i
+            className="fa-solid fa-spinner"
+            style={{
+              animation: "spin .8s linear infinite",
+              color: "var(--muted)",
+              fontSize: ".72rem",
+            }}
+          ></i>
+        </div>
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={thumb} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:loaded?1:0,transition:'opacity .35s'}}
-        onLoad={()=>setLoaded(true)} onError={e=>e.currentTarget.style.opacity='0'} />
+      <img
+        src={thumb}
+        alt=""
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+          opacity: loaded ? 1 : 0,
+          transition: "opacity .35s",
+        }}
+        onLoad={() => setLoaded(true)}
+        onError={(e) => (e.currentTarget.style.opacity = "0")}
+      />
     </div>
   );
 }
 
-function PageBtn({ children,onClick,disabled }: { children:React.ReactNode;onClick:()=>void;disabled?:boolean }) {
-  return <button onClick={onClick} disabled={disabled} style={{background:'var(--surface)',border:'1px solid var(--border)',color:'var(--muted)',fontSize:'.74rem',padding:'4px 12px',borderRadius:7,cursor:disabled?'default':'pointer',opacity:disabled?.3:1}}>{children}</button>;
+function PageBtn({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        color: "var(--muted)",
+        fontSize: ".74rem",
+        padding: "4px 12px",
+        borderRadius: 7,
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.3 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
 }

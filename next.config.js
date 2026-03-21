@@ -2,8 +2,8 @@
 const nextConfig = {
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'loremflickr.com' },
-      { protocol: 'https', hostname: 'live.staticflickr.com' },
+      { protocol: 'https', hostname: 'cdn.pixabay.com' },
+      { protocol: 'https', hostname: 'pixabay.com' },
     ],
   },
 };
