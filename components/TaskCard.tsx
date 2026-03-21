@@ -1,4 +1,5 @@
 'use client';
+import { useRef } from 'react';
 import { Task, Palette } from '@/lib/types';
 import { fmtDate } from '@/lib/utils';
 
@@ -18,6 +19,9 @@ function removeTouchGhost() {
 }
 
 export default function TaskCard({ task: t, li, ti, palette, onToggle, onContextMenu }: Props) {
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchEl = useRef<HTMLElement | null>(null);
   const today = new Date(); today.setHours(0,0,0,0);
 
   const endBadgeCls = () => {
@@ -60,45 +64,55 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
       onDragEnd={e => (e.currentTarget as HTMLElement).classList.remove('task-dragging')}
       onContextMenu={onContextMenu}
       onTouchStart={e => {
-        // Start drag immediately — no delay
-        const el = e.currentTarget as HTMLElement;
+        // Record start position — drag only begins once finger moves enough
         const touch = e.touches[0];
-        touchDragLi = li;
-        touchDragTi = ti;
-        document.body.classList.add('touch-dragging');
-        removeTouchGhost();
-        touchGhost = el.cloneNode(true) as HTMLElement;
-        touchGhost.style.cssText = `position:fixed;z-index:9999;opacity:0.8;pointer-events:none;width:${el.offsetWidth}px;transform:scale(1.05);transition:none;box-shadow:0 8px 32px rgba(0,0,0,0.5);border-radius:8px;`;
-        document.body.appendChild(touchGhost);
-        touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
-        touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
+        touchStartX.current = touch.clientX;
+        touchStartY.current = touch.clientY;
+        touchEl.current = e.currentTarget as HTMLElement;
       }}
       onTouchMove={e => {
-        if (touchDragLi === null) return;
-        e.preventDefault();
         const touch = e.touches[0];
-        const el = e.currentTarget as HTMLElement;
+        // Activate drag once finger has moved 8px
+        if (touchDragLi === null) {
+          const dx = Math.abs(touch.clientX - touchStartX.current);
+          const dy = Math.abs(touch.clientY - touchStartY.current);
+          if (dx < 8 && dy < 8) return;
+          const el = touchEl.current!;
+          touchDragLi = li;
+          touchDragTi = ti;
+          document.body.classList.add('touch-dragging');
+          removeTouchGhost();
+          touchGhost = el.cloneNode(true) as HTMLElement;
+          touchGhost.style.cssText = `position:fixed;z-index:9999;opacity:0.85;pointer-events:none;width:${el.offsetWidth}px;transform:scale(1.05);transition:none;box-shadow:0 8px 32px rgba(0,0,0,0.5);border-radius:8px;`;
+          document.body.appendChild(touchGhost);
+        }
+        e.preventDefault();
+        const el = touchEl.current!;
         if (touchGhost) {
           touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
-          touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
+          touchGhost.style.top  = (touch.clientY - el.offsetHeight / 2) + 'px';
         }
-        // Highlight the target list
+        // Briefly hide ghost so elementFromPoint sees what's underneath
+        if (touchGhost) touchGhost.style.display = 'none';
         const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (touchGhost) touchGhost.style.display = '';
         const targetList = elBelow?.closest('[data-li]') as HTMLElement | null;
         document.querySelectorAll('.touch-drop-target').forEach(el => el.classList.remove('touch-drop-target'));
         if (targetList) targetList.classList.add('touch-drop-target');
       }}
       onTouchEnd={e => {
         document.body.classList.remove('touch-dragging');
-        removeTouchGhost();
         document.querySelectorAll('.touch-drop-target').forEach(el => el.classList.remove('touch-drop-target'));
-        if (touchDragLi === null) return;
+        if (touchDragLi === null) { removeTouchGhost(); return; }
         const savedFromLi = touchDragLi;
         const savedFromTi = touchDragTi;
         touchDragLi = null;
         touchDragTi = null;
         const touch = e.changedTouches[0];
+        // Hide ghost before hit-testing so it doesn't block the element underneath
+        if (touchGhost) touchGhost.style.display = 'none';
         const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        removeTouchGhost();
         const targetListEl = elBelow?.closest('[data-li]') as HTMLElement | null;
         const targetTaskEl = elBelow?.closest('[data-ti]') as HTMLElement | null;
         if (targetListEl) {
@@ -118,7 +132,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
         display:'flex', flexDirection:'column', gap:7,
         cursor:'grab', transition:'all .2s',
         animation:'taskIn .28s cubic-bezier(.34,1.56,.64,1)',
-        touchAction:'none',
+        touchAction:'none', // prevents browser scroll hijack during drag
       }}
       onMouseEnter={e=>{if(!t.done){const el=e.currentTarget;el.style.background='var(--surface2)';el.style.borderColor='rgba(111,95,255,.3)';el.style.transform='translateY(-1px)';el.style.boxShadow='0 4px 16px rgba(0,0,0,.28)';}}}
       onMouseLeave={e=>{const el=e.currentTarget;el.style.background=t.done?'var(--done-bg)':'var(--surface)';el.style.borderColor=t.done?'rgba(255,255,255,.04)':'var(--border)';el.style.transform='';el.style.boxShadow='';}}
