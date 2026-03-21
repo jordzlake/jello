@@ -9,6 +9,9 @@ interface Props {
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
+// Detect touch device once at module load
+const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
 // Global touch drag state shared across all TaskCards
 let touchDragLi: number | null = null;
 let touchDragTi: number | null = null;
@@ -51,9 +54,10 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
 
   return (
     <div
-      draggable
+      draggable={!isTouchDevice}
       data-li={li} data-ti={ti}
       onDragStart={e => {
+        if (isTouchDevice) { e.preventDefault(); return; }
         e.stopPropagation();
         e.dataTransfer.setData('taskLi', String(li));
         e.dataTransfer.setData('taskTi', String(ti));

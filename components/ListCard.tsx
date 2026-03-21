@@ -21,6 +21,9 @@ interface Props {
   onListDragEnd: () => void;
 }
 
+// Detect touch device once at module load
+const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
 export default function ListCard({
   list,
   li,
@@ -78,20 +81,15 @@ export default function ListCard({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (isTouchDevice) return;
     e.preventDefault();
-    // Identify what is being dragged via dataTransfer types if possible,
-    // or rely on the isListDragging prop from parent
-    if (isListDragging) {
-      setIsDragOver(true);
-      return;
-    }
-
+    if (isListDragging) { setIsDragOver(true); return; }
     setIsDragOver(true);
     setDropIndex(getDropIndex(e));
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // Only reset if we are actually leaving the list element
+    if (isTouchDevice) return;
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
       setDropIndex(null);
@@ -99,6 +97,7 @@ export default function ListCard({
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    if (isTouchDevice) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
