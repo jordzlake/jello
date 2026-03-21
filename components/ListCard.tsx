@@ -207,7 +207,7 @@ export default function ListCard({
           ⠿
         </div>
 
-        {/* Mobile reorder arrows — shown only on touch screens */}
+        {/* Mobile reorder arrows — shown only on touch screens via CSS class */}
         <div
           className="list-reorder-arrows"
           style={{
@@ -216,7 +216,6 @@ export default function ListCard({
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 10,
-            display: "flex",
             gap: 4,
           }}
         >

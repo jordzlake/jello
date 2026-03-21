@@ -1,5 +1,4 @@
 'use client';
-import { useRef } from 'react';
 import { Task, Palette } from '@/lib/types';
 import { fmtDate } from '@/lib/utils';
 
@@ -19,7 +18,6 @@ function removeTouchGhost() {
 }
 
 export default function TaskCard({ task: t, li, ti, palette, onToggle, onContextMenu }: Props) {
-  const holdTimer = useRef<ReturnType<typeof setTimeout>>();
   const today = new Date(); today.setHours(0,0,0,0);
 
   const endBadgeCls = () => {
@@ -62,23 +60,20 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
       onDragEnd={e => (e.currentTarget as HTMLElement).classList.remove('task-dragging')}
       onContextMenu={onContextMenu}
       onTouchStart={e => {
+        // Start drag immediately — no delay
         const el = e.currentTarget as HTMLElement;
-        holdTimer.current = setTimeout(() => {
-          touchDragLi = li;
-          touchDragTi = ti;
-          document.body.classList.add('touch-dragging');
-          // Create floating ghost clone
-          removeTouchGhost();
-          touchGhost = el.cloneNode(true) as HTMLElement;
-          touchGhost.style.cssText = `position:fixed;z-index:9999;opacity:0.8;pointer-events:none;width:${el.offsetWidth}px;transform:scale(1.05);transition:none;box-shadow:0 8px 32px rgba(0,0,0,0.5);border-radius:8px;`;
-          document.body.appendChild(touchGhost);
-          const touch = e.touches[0];
-          touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
-          touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
-        }, 180);
+        const touch = e.touches[0];
+        touchDragLi = li;
+        touchDragTi = ti;
+        document.body.classList.add('touch-dragging');
+        removeTouchGhost();
+        touchGhost = el.cloneNode(true) as HTMLElement;
+        touchGhost.style.cssText = `position:fixed;z-index:9999;opacity:0.8;pointer-events:none;width:${el.offsetWidth}px;transform:scale(1.05);transition:none;box-shadow:0 8px 32px rgba(0,0,0,0.5);border-radius:8px;`;
+        document.body.appendChild(touchGhost);
+        touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
+        touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
       }}
       onTouchMove={e => {
-        clearTimeout(holdTimer.current);
         if (touchDragLi === null) return;
         e.preventDefault();
         const touch = e.touches[0];
@@ -87,14 +82,13 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
           touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
           touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
         }
-        // Highlight the list column being hovered
+        // Highlight the target list
         const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
         const targetList = elBelow?.closest('[data-li]') as HTMLElement | null;
         document.querySelectorAll('.touch-drop-target').forEach(el => el.classList.remove('touch-drop-target'));
         if (targetList) targetList.classList.add('touch-drop-target');
       }}
       onTouchEnd={e => {
-        clearTimeout(holdTimer.current);
         document.body.classList.remove('touch-dragging');
         removeTouchGhost();
         document.querySelectorAll('.touch-drop-target').forEach(el => el.classList.remove('touch-drop-target'));
@@ -124,6 +118,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
         display:'flex', flexDirection:'column', gap:7,
         cursor:'grab', transition:'all .2s',
         animation:'taskIn .28s cubic-bezier(.34,1.56,.64,1)',
+        touchAction:'none',
       }}
       onMouseEnter={e=>{if(!t.done){const el=e.currentTarget;el.style.background='var(--surface2)';el.style.borderColor='rgba(111,95,255,.3)';el.style.transform='translateY(-1px)';el.style.boxShadow='0 4px 16px rgba(0,0,0,.28)';}}}
       onMouseLeave={e=>{const el=e.currentTarget;el.style.background=t.done?'var(--done-bg)':'var(--surface)';el.style.borderColor=t.done?'rgba(255,255,255,.04)':'var(--border)';el.style.transform='';el.style.boxShadow='';}}
