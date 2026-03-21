@@ -180,6 +180,53 @@ export default function ListCard({
           }}
           onDragEnd={onListDragEnd}
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            const startX = e.touches[0].clientX;
+            const startY = e.touches[0].clientY;
+            let moved = false;
+
+            const onMove = (ev: TouchEvent) => {
+              const dx = Math.abs(ev.touches[0].clientX - startX);
+              const dy = Math.abs(ev.touches[0].clientY - startY);
+              if (dx > 8 || dy > 8) {
+                moved = true;
+                onListDragStart();
+                document.body.classList.add('touch-dragging');
+              }
+              if (!moved) return;
+              ev.preventDefault();
+              const touch = ev.touches[0];
+              // Highlight target list column
+              const el = document.elementFromPoint(touch.clientX, touch.clientY);
+              const targetListEl = el?.closest('[data-li]') as HTMLElement | null;
+              document.querySelectorAll('.touch-drop-target').forEach(e => e.classList.remove('touch-drop-target'));
+              if (targetListEl) targetListEl.classList.add('touch-drop-target');
+            };
+
+            const onEnd = (ev: TouchEvent) => {
+              document.removeEventListener('touchmove', onMove);
+              document.removeEventListener('touchend', onEnd);
+              document.body.classList.remove('touch-dragging');
+              document.querySelectorAll('.touch-drop-target').forEach(e => e.classList.remove('touch-drop-target'));
+              onListDragEnd();
+              if (!moved) return;
+              const touch = ev.changedTouches[0];
+              const el = document.elementFromPoint(touch.clientX, touch.clientY);
+              const targetListEl = el?.closest('[data-li]') as HTMLElement | null;
+              if (targetListEl) {
+                const toLi = parseInt(targetListEl.dataset.li ?? '');
+                if (!isNaN(toLi) && toLi !== li) {
+                  document.dispatchEvent(new CustomEvent('touch-move-list', {
+                    detail: { fromLi: li, toLi }
+                  }));
+                }
+              }
+            };
+
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+          }}
           style={{
             position: "absolute",
             top: 6,
@@ -189,6 +236,7 @@ export default function ListCard({
             color: "rgba(255,255,255,0.4)",
             cursor: "grab",
             padding: "4px 12px",
+            touchAction: "none",
           }}
         >
           ⠿

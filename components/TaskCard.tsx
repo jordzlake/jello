@@ -1,4 +1,5 @@
 'use client';
+import { useRef } from 'react';
 import { Task, Palette } from '@/lib/types';
 import { fmtDate } from '@/lib/utils';
 
@@ -8,7 +9,17 @@ interface Props {
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
+// Global touch drag state shared across all TaskCards
+let touchDragLi: number | null = null;
+let touchDragTi: number | null = null;
+let touchGhost: HTMLElement | null = null;
+
+function removeTouchGhost() {
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+}
+
 export default function TaskCard({ task: t, li, ti, palette, onToggle, onContextMenu }: Props) {
+  const holdTimer = useRef<ReturnType<typeof setTimeout>>();
   const today = new Date(); today.setHours(0,0,0,0);
 
   const endBadgeCls = () => {
@@ -50,6 +61,62 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
       }}
       onDragEnd={e => (e.currentTarget as HTMLElement).classList.remove('task-dragging')}
       onContextMenu={onContextMenu}
+      onTouchStart={e => {
+        const el = e.currentTarget as HTMLElement;
+        holdTimer.current = setTimeout(() => {
+          touchDragLi = li;
+          touchDragTi = ti;
+          document.body.classList.add('touch-dragging');
+          // Create floating ghost clone
+          removeTouchGhost();
+          touchGhost = el.cloneNode(true) as HTMLElement;
+          touchGhost.style.cssText = `position:fixed;z-index:9999;opacity:0.8;pointer-events:none;width:${el.offsetWidth}px;transform:scale(1.05);transition:none;box-shadow:0 8px 32px rgba(0,0,0,0.5);border-radius:8px;`;
+          document.body.appendChild(touchGhost);
+          const touch = e.touches[0];
+          touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
+          touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
+        }, 180);
+      }}
+      onTouchMove={e => {
+        clearTimeout(holdTimer.current);
+        if (touchDragLi === null) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const el = e.currentTarget as HTMLElement;
+        if (touchGhost) {
+          touchGhost.style.left = (touch.clientX - el.offsetWidth / 2) + 'px';
+          touchGhost.style.top = (touch.clientY - el.offsetHeight / 2) + 'px';
+        }
+        // Highlight the list column being hovered
+        const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetList = elBelow?.closest('[data-li]') as HTMLElement | null;
+        document.querySelectorAll('.touch-drop-target').forEach(el => el.classList.remove('touch-drop-target'));
+        if (targetList) targetList.classList.add('touch-drop-target');
+      }}
+      onTouchEnd={e => {
+        clearTimeout(holdTimer.current);
+        document.body.classList.remove('touch-dragging');
+        removeTouchGhost();
+        document.querySelectorAll('.touch-drop-target').forEach(el => el.classList.remove('touch-drop-target'));
+        if (touchDragLi === null) return;
+        const savedFromLi = touchDragLi;
+        const savedFromTi = touchDragTi;
+        touchDragLi = null;
+        touchDragTi = null;
+        const touch = e.changedTouches[0];
+        const elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetListEl = elBelow?.closest('[data-li]') as HTMLElement | null;
+        const targetTaskEl = elBelow?.closest('[data-ti]') as HTMLElement | null;
+        if (targetListEl) {
+          const toLi = parseInt(targetListEl.dataset.li ?? '');
+          const toTi = targetTaskEl ? parseInt(targetTaskEl.dataset.ti ?? '') : undefined;
+          if (!isNaN(toLi)) {
+            document.dispatchEvent(new CustomEvent('touch-move-task', {
+              detail: { fromLi: savedFromLi, fromTi: savedFromTi, toLi, toTi }
+            }));
+          }
+        }
+      }}
       style={{
         background: t.done ? 'var(--done-bg)' : 'var(--surface)',
         border: `1px solid ${t.done ? 'rgba(255,255,255,.04)' : 'var(--border)'}`,

@@ -90,6 +90,26 @@ export default function App() {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
+  // Touch drag-and-drop support for mobile
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fromLi, fromTi, toLi, toTi } = (e as CustomEvent).detail;
+      store.moveTask(fromLi, fromTi, toLi, toTi);
+    };
+    document.addEventListener("touch-move-task", handler);
+    return () => document.removeEventListener("touch-move-task", handler);
+  }, [store.moveTask]);
+
+  // Touch list reordering for mobile
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { fromLi, toLi } = (e as CustomEvent).detail;
+      store.reorderLists(fromLi, toLi);
+    };
+    document.addEventListener("touch-move-list", handler);
+    return () => document.removeEventListener("touch-move-list", handler);
+  }, [store.reorderLists]);
+
   if (!hydrated) {
     return (
       <div

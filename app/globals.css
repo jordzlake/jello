@@ -41,3 +41,8 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 /* Date inputs */
 input[type="date"], input[type="time"] { color-scheme:dark; }
 input[type="range"] { accent-color:var(--accent); }
+
+/* Touch drag-and-drop */
+.touch-drop-target { box-shadow: 0 0 0 2px var(--accent) !important; transition: box-shadow .15s; }
+/* Prevent text selection during touch drag */
+body.touch-dragging { user-select: none; -webkit-user-select: none; }

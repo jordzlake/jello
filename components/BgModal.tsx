@@ -15,8 +15,8 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
   useEffect(()=>{if(open){setSearch('');setPage(1);load('nature',1);}}, [open]);
 
   const load = (kw:string,pg:number)=>{
-    const base=(pg-1)*PAGE, seed=Math.floor(Date.now()/60000%10000)*PAGE;
-    setImgs(Array.from({length:PAGE},(_,i)=>flickrUrl(kw,base+i+seed,false)));
+    const base=(pg-1)*PAGE;
+    setImgs(Array.from({length:PAGE},(_,i)=>flickrUrl(kw,base+i,false)));
   };
   const handleSearch = (v:string)=>{setSearch(v);clearTimeout(timer.current);timer.current=setTimeout(()=>{setPage(1);load(v||'nature',1);},500);};
 

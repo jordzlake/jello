@@ -14,11 +14,26 @@ export function fmtDateFull(d: Date): string {
   return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
+// Stable seed: combine idx with a hash of the keyword so the same
+// keyword+slot always yields the same URL, regardless of when the
+// page is loaded. Using picsum.photos for backgrounds/banners gives
+// deterministic images by seed; for keyword-based images we keep
+// loremflickr but freeze the random number.
+function stableSeed(keyword: string, idx: number): number {
+  let h = 0;
+  const s = (keyword || 'nature') + ':' + idx;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h) % 9999 || 1;
+}
+
 export function flickrUrl(keyword: string, idx: number, isBanner: boolean): string {
   const w = isBanner ? 480 : 860;
   const h = isBanner ? 180 : 540;
   const kw = encodeURIComponent((keyword || 'nature').trim().replace(/\s+/g, ','));
-  return `https://loremflickr.com/${w}/${h}/${kw}?random=${idx}`;
+  const seed = stableSeed(keyword, idx);
+  return `https://loremflickr.com/${w}/${h}/${kw}?random=${seed}&lock=1`;
 }
 
 export const PAL: Palette[] = [

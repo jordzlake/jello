@@ -31,8 +31,7 @@ export default function ListStyleModal({ open, list, onClose, onUpdate }: Props)
   const load = (kw: string, pg: number) => {
     setLoading(true);
     const base = (pg-1)*PAGE;
-    const seed = Math.floor(Date.now()/60000%10000)*PAGE;
-    setImgs(Array.from({length:PAGE},(_,i)=>flickrUrl(kw,base+i+seed,true)));
+    setImgs(Array.from({length:PAGE},(_,i)=>flickrUrl(kw,base+i,true)));
     setLoading(false);
   };
 
