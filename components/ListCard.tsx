@@ -152,15 +152,27 @@ export default function ListCard({
           height: 70,
           position: "relative",
           overflow: "hidden",
-          background: list.bannerUrl
-            ? "transparent"
-            : `linear-gradient(135deg,${palette.c1},${palette.c2})`,
-          backgroundImage: list.bannerUrl ? `url(${list.bannerUrl})` : "none",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          background: `linear-gradient(135deg,${palette.c1},${palette.c2})`,
           cursor: "pointer",
         }}
       >
+        {/* Banner image — object-fit:cover is always applied immediately */}
+        {list.bannerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={list.bannerUrl}
+            alt=""
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center",
+              display: "block",
+            }}
+          />
+        )}
         <div
           style={{
             position: "absolute",
