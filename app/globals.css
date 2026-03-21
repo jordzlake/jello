@@ -46,3 +46,11 @@ input[type="range"] { accent-color:var(--accent); }
 .touch-drop-target { box-shadow: 0 0 0 2px var(--accent) !important; transition: box-shadow .15s; }
 /* Prevent text selection during touch drag */
 body.touch-dragging { user-select: none; -webkit-user-select: none; }
+
+/* List reorder controls — arrows on touch, drag handle on pointer devices */
+.list-reorder-arrows { display: none; }
+.list-drag-handle-desktop { display: flex; }
+@media (hover: none) and (pointer: coarse) {
+  .list-reorder-arrows { display: flex; }
+  .list-drag-handle-desktop { display: none; }
+}

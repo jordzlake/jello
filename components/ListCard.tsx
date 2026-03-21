@@ -153,8 +153,9 @@ export default function ListCard({
           position: "relative",
           overflow: "hidden",
           background: list.bannerUrl
-            ? `url(${list.bannerUrl})`
+            ? "transparent"
             : `linear-gradient(135deg,${palette.c1},${palette.c2})`,
+          backgroundImage: list.bannerUrl ? `url(${list.bannerUrl})` : "none",
           backgroundSize: "cover",
           backgroundPosition: "center",
           cursor: "pointer",
@@ -169,9 +170,9 @@ export default function ListCard({
           }}
         />
 
-        {/* List Drag Handle */}
+        {/* Desktop drag handle — hidden on touch screens */}
         <div
-          className="list-drag-handle"
+          className="list-drag-handle list-drag-handle-desktop"
           draggable
           onDragStart={(e) => {
             e.dataTransfer.setData("drag", "list");
@@ -180,53 +181,6 @@ export default function ListCard({
           }}
           onDragEnd={onListDragEnd}
           onClick={(e) => e.stopPropagation()}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-            const startX = e.touches[0].clientX;
-            const startY = e.touches[0].clientY;
-            let moved = false;
-
-            const onMove = (ev: TouchEvent) => {
-              const dx = Math.abs(ev.touches[0].clientX - startX);
-              const dy = Math.abs(ev.touches[0].clientY - startY);
-              if (dx > 8 || dy > 8) {
-                moved = true;
-                onListDragStart();
-                document.body.classList.add('touch-dragging');
-              }
-              if (!moved) return;
-              ev.preventDefault();
-              const touch = ev.touches[0];
-              // Highlight target list column
-              const el = document.elementFromPoint(touch.clientX, touch.clientY);
-              const targetListEl = el?.closest('[data-li]') as HTMLElement | null;
-              document.querySelectorAll('.touch-drop-target').forEach(e => e.classList.remove('touch-drop-target'));
-              if (targetListEl) targetListEl.classList.add('touch-drop-target');
-            };
-
-            const onEnd = (ev: TouchEvent) => {
-              document.removeEventListener('touchmove', onMove);
-              document.removeEventListener('touchend', onEnd);
-              document.body.classList.remove('touch-dragging');
-              document.querySelectorAll('.touch-drop-target').forEach(e => e.classList.remove('touch-drop-target'));
-              onListDragEnd();
-              if (!moved) return;
-              const touch = ev.changedTouches[0];
-              const el = document.elementFromPoint(touch.clientX, touch.clientY);
-              const targetListEl = el?.closest('[data-li]') as HTMLElement | null;
-              if (targetListEl) {
-                const toLi = parseInt(targetListEl.dataset.li ?? '');
-                if (!isNaN(toLi) && toLi !== li) {
-                  document.dispatchEvent(new CustomEvent('touch-move-list', {
-                    detail: { fromLi: li, toLi }
-                  }));
-                }
-              }
-            };
-
-            document.addEventListener('touchmove', onMove, { passive: false });
-            document.addEventListener('touchend', onEnd);
-          }}
           style={{
             position: "absolute",
             top: 6,
@@ -236,10 +190,50 @@ export default function ListCard({
             color: "rgba(255,255,255,0.4)",
             cursor: "grab",
             padding: "4px 12px",
-            touchAction: "none",
           }}
         >
           ⠿
+        </div>
+
+        {/* Mobile reorder arrows — shown only on touch screens */}
+        <div
+          className="list-reorder-arrows"
+          style={{
+            position: "absolute",
+            top: 6,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            display: "flex",
+            gap: 4,
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveList(li, li - 1); }}
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 6,
+              color: "rgba(255,255,255,0.8)",
+              fontSize: ".85rem",
+              width: 28, height: 24,
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >‹</button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveList(li, li + 1); }}
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 6,
+              color: "rgba(255,255,255,0.8)",
+              fontSize: ".85rem",
+              width: 28, height: 24,
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >›</button>
         </div>
       </div>
 
