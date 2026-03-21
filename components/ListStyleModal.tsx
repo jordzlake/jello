@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Modal, { MLabel, MFooter, BtnPrimary } from './Modal';
 import { JList, Palette } from '@/lib/types';
-import { PAL, flickrUrl } from '@/lib/utils';
+import { PAL } from '@/lib/utils';
 
 interface Props {
   open: boolean;
@@ -11,34 +11,38 @@ interface Props {
   onUpdate: (patch: Partial<JList>) => void;
 }
 
-const PAGE = 9;
+const PER_PAGE = 9;
+const BW = 480, BH = 180;
+
+function picsumBannerUrl(id: string | number) {
+  return `https://picsum.photos/id/${id}/${BW}/${BH}`;
+}
 
 export default function ListStyleModal({ open, list, onClose, onUpdate }: Props) {
-  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [imgs, setImgs] = useState<string[]>([]);
+  const [imgs, setImgs] = useState<{id:string; thumb:string; full:string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [allPals, setAllPals] = useState<Palette[]>(PAL);
   const [c1, setC1] = useState('#6f5fff');
   const [c2, setC2] = useState('#ff5fa0');
-  const [cname, setCname] = useState('');
-  const timer = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => {
-    if (open) { setSearch(''); setPage(1); load('landscape', 1); }
-  }, [open]);
+  useEffect(() => { if (open) { setPage(1); load(1); } }, [open]);
 
-  const load = (kw: string, pg: number) => {
+  const load = async (pg: number) => {
     setLoading(true);
-    const base = (pg-1)*PAGE;
-    setImgs(Array.from({length:PAGE},(_,i)=>flickrUrl(kw,base+i,true)));
+    try {
+      const res = await fetch(`https://picsum.photos/v2/list?page=${pg}&limit=${PER_PAGE}`);
+      const data = await res.json();
+      setImgs(data.map((item: {id:string}) => ({
+        id: item.id,
+        thumb: `https://picsum.photos/id/${item.id}/240/90`,
+        full: picsumBannerUrl(item.id),
+      })));
+    } catch {}
     setLoading(false);
   };
 
-  const handleSearch = (v: string) => {
-    setSearch(v); clearTimeout(timer.current);
-    timer.current = setTimeout(()=>{setPage(1);load(v||'landscape',1);},500);
-  };
+  const goTo = (pg: number) => { setPage(pg); load(pg); };
 
   const addGradient = () => {
     const p: Palette = { c1, c2 };
@@ -63,7 +67,6 @@ export default function ListStyleModal({ open, list, onClose, onUpdate }: Props)
         ))}
       </div>
 
-      {/* Custom gradient */}
       <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:12,marginBottom:14}}>
         <div style={{fontSize:'.72rem',color:'var(--muted)',marginBottom:8}}>✨ Custom Gradient</div>
         <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:8}}>
@@ -82,31 +85,27 @@ export default function ListStyleModal({ open, list, onClose, onUpdate }: Props)
         </div>
       </div>
 
-      <MLabel>Banner — search any keyword</MLabel>
-      <div style={{position:'relative',marginBottom:7}}>
-        <i className="fa-solid fa-magnifying-glass" style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--muted)',fontSize:'.76rem',pointerEvents:'none'}}></i>
-        <input value={search} onChange={e=>handleSearch(e.target.value)} placeholder="gaming, ocean, neon, cats, space…"
-          style={{width:'100%',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:'var(--rsm)',color:'var(--text)',fontFamily:'DM Sans,sans-serif',fontSize:'.84rem',padding:'8px 10px 8px 32px',outline:'none'}}
-        />
-      </div>
-      <div style={{fontSize:'.65rem',color:'var(--muted)',marginBottom:8,display:'flex',alignItems:'center',gap:4}}>
-        <i className="fa-solid fa-circle-info"></i> Powered by LoremFlickr
+      <MLabel>Banner photo</MLabel>
+      <div style={{fontSize:'.65rem',color:'var(--muted)',marginBottom:8}}>
+        Each photo is permanent — saved by ID, never changes on reload
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5,marginBottom:8,minHeight:120}}>
-        {loading ? (
-          <div style={{gridColumn:'1/-1',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-            <i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)'}}></i>
-          </div>
-        ) : imgs.map((url,i)=>(
-          <ImgCell key={i} url={url} onClick={()=>onUpdate({bannerUrl:url})} />
-        ))}
-      </div>
+      {loading ? (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:120}}>
+          <i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)'}}></i>
+        </div>
+      ) : (
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5,marginBottom:8,minHeight:120}}>
+          {imgs.map(img => (
+            <ImgCell key={img.id} thumb={img.thumb} onClick={() => onUpdate({bannerUrl: img.full})} />
+          ))}
+        </div>
+      )}
 
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:10}}>
-        <PageBtn disabled={page<=1} onClick={()=>{const p=page-1;setPage(p);load(search||'landscape',p);}}>← Prev</PageBtn>
+        <PageBtn disabled={page<=1} onClick={()=>goTo(page-1)}>← Prev</PageBtn>
         <span style={{fontSize:'.72rem',color:'var(--muted)'}}>Page {page}</span>
-        <PageBtn onClick={()=>{const p=page+1;setPage(p);load(search||'landscape',p);}}>Next →</PageBtn>
+        <PageBtn onClick={()=>goTo(page+1)}>Next →</PageBtn>
       </div>
 
       <MFooter><BtnPrimary onClick={onClose}>Done</BtnPrimary></MFooter>
@@ -114,45 +113,21 @@ export default function ListStyleModal({ open, list, onClose, onUpdate }: Props)
   );
 }
 
-async function toDataUrl(src: string): Promise<string> {
-  const res = await fetch(src);
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-function ImgCell({ url, onClick }: { url:string; onClick:(dataUrl:string)=>void }) {
+function ImgCell({ thumb, onClick }: { thumb:string; onClick:()=>void }) {
   const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const handleClick = async () => {
-    setSaving(true);
-    try {
-      const dataUrl = await toDataUrl(url);
-      onClick(dataUrl);
-    } catch {
-      onClick(url);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
-    <div onClick={handleClick} style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:saving?'wait':'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
+    <div onClick={onClick} style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
       onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--accent)';e.currentTarget.style.transform='scale(1.04)';}}
       onMouseLeave={e=>{e.currentTarget.style.borderColor='transparent';e.currentTarget.style.transform='';}}
     >
-      {(!loaded || saving) && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)'}}></i></div>}
+      {!loaded && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)',fontSize:'.72rem'}}></i></div>}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:loaded?1:0,transition:'opacity .35s'}}
+      <img src={thumb} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:loaded?1:0,transition:'opacity .35s'}}
         onLoad={()=>setLoaded(true)} onError={e=>e.currentTarget.style.opacity='0'} />
     </div>
   );
 }
+
 function PageBtn({ children, onClick, disabled }: { children:React.ReactNode;onClick:()=>void;disabled?:boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{background:'var(--surface)',border:'1px solid var(--border)',color:disabled?'var(--muted)':'var(--text)',fontSize:'.74rem',padding:'4px 12px',borderRadius:7,cursor:disabled?'default':'pointer',opacity:disabled?.3:1,transition:'all .2s'}}>

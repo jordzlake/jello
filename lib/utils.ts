@@ -14,13 +14,6 @@ export function fmtDateFull(d: Date): string {
   return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
-export function flickrUrl(keyword: string, idx: number, isBanner: boolean): string {
-  const w = isBanner ? 480 : 860;
-  const h = isBanner ? 180 : 540;
-  const kw = encodeURIComponent((keyword || 'nature').trim().replace(/\s+/g, ','));
-  return `https://loremflickr.com/${w}/${h}/${kw}?random=${idx + 1}`;
-}
-
 export const PAL: Palette[] = [
   {c1:'#6f5fff',c2:'#ff5fa0'},{c1:'#00c6ff',c2:'#7b2ff7'},
   {c1:'#f7971e',c2:'#ffd200'},{c1:'#0ba360',c2:'#3cba92'},
