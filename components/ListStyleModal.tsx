@@ -114,21 +114,45 @@ export default function ListStyleModal({ open, list, onClose, onUpdate }: Props)
   );
 }
 
-function ImgCell({ url, onClick }: { url:string; onClick:()=>void }) {
+async function toDataUrl(src: string): Promise<string> {
+  const res = await fetch(src);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function ImgCell({ url, onClick }: { url:string; onClick:(dataUrl:string)=>void }) {
   const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleClick = async () => {
+    setSaving(true);
+    try {
+      const dataUrl = await toDataUrl(url);
+      onClick(dataUrl);
+    } catch {
+      onClick(url);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div onClick={onClick} style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
+    <div onClick={handleClick} style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:saving?'wait':'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
       onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--accent)';e.currentTarget.style.transform='scale(1.04)';}}
       onMouseLeave={e=>{e.currentTarget.style.borderColor='transparent';e.currentTarget.style.transform='';}}
     >
-      {!loaded && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)',fontSize:'.72rem'}}></i></div>}
+      {(!loaded || saving) && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)'}}></i></div>}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:loaded?1:0,transition:'opacity .35s'}}
-        onLoad={()=>setLoaded(true)} onError={e=>{e.currentTarget.src=`https://loremflickr.com/480/180/nature?random=${Math.random()*9999|0}`;}} />
+        onLoad={()=>setLoaded(true)} onError={e=>e.currentTarget.style.opacity='0'} />
     </div>
   );
 }
-
 function PageBtn({ children, onClick, disabled }: { children:React.ReactNode;onClick:()=>void;disabled?:boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{background:'var(--surface)',border:'1px solid var(--border)',color:disabled?'var(--muted)':'var(--text)',fontSize:'.74rem',padding:'4px 12px',borderRadius:7,cursor:disabled?'default':'pointer',opacity:disabled?.3:1,transition:'all .2s'}}>
