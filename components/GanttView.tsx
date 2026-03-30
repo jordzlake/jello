@@ -213,16 +213,17 @@ export default function GanttView({
             tasks={tasks}
             viewMode={viewMode}
             onClick={handleClick}
-            listCellWidth="200px"
-            columnWidth={zoom === "week" ? 50 : zoom === "month" ? 30 : 80}
-            rowHeight={40}
-            barFill={72}
+            listCellWidth="220px"
+            columnWidth={zoom === "week" ? 46 : zoom === "month" ? 28 : 90}
+            rowHeight={44}
+            barFill={68}
             barCornerRadius={6}
-            headerHeight={50}
+            headerHeight={48}
             fontFamily="DM Sans, sans-serif"
             fontSize="12px"
-            todayColor="rgba(111,95,255,0.15)"
-            arrowColor="var(--accent)"
+            todayColor="rgba(111,95,255,0.13)"
+            arrowColor="#6f5fff"
+            ganttHeight={0}
           />
         </div>
       )}

@@ -159,48 +159,151 @@ body.touch-dragging {
   }
 }
 
-/* ── gantt-task-react dark theme overrides ─────────────────────────── */
-.jello-gantt ._CZjuD {
-  background: var(--bg);
-}
-.jello-gantt ._2dZTy {
-  fill: var(--bg);
-}
-.jello-gantt ._3rUKi {
-  background: rgba(18, 18, 28, 0.95);
-}
-.jello-gantt ._WuQ0f {
-  background: rgba(18, 18, 28, 0.95);
-}
-.jello-gantt ._9w8d5 {
-  color: var(--text);
-  font-family: "DM Sans", sans-serif;
-}
-.jello-gantt ._3T42e {
-  stroke: var(--border);
-}
-.jello-gantt ._1rLuZ {
-  stroke: var(--border);
-}
-.jello-gantt ._2B2zv {
-  fill: rgba(255, 255, 255, 0.06);
-  stroke: var(--border);
-}
-.jello-gantt ._3KcaM {
-  fill: rgba(255, 255, 255, 0.04);
-}
-.jello-gantt ._RuwuV {
-  color: var(--muted);
-  font-size: 0.68rem;
-}
-.jello-gantt ._2eZzQ {
-  stroke: rgba(255, 255, 255, 0.08);
-}
-.jello-gantt ._1eT-J {
-  overflow: hidden;
+/* ── gantt-task-react dark theme ────────────────────────────────────── */
+
+/* Wrapper */
+.jello-gantt {
   border-radius: 14px;
+  overflow: hidden;
   border: 1px solid var(--border);
 }
+
+/* Task list panel (left side table) */
+.jello-gantt ._3_ygE {
+  background: #0e0e1a;
+  border-color: var(--border);
+}
+.jello-gantt ._1nBOt {
+  background: #0e0e1a;
+}
+.jello-gantt ._WuQ0f {
+  background: #0e0e1a;
+  border-color: var(--border);
+  color: var(--text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.8rem;
+}
+.jello-gantt ._34SS0 {
+  background: #0b0b13 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.jello-gantt ._34SS0:nth-of-type(even) {
+  background: rgba(255, 255, 255, 0.025) !important;
+}
+.jello-gantt ._3lLk3 {
+  color: var(--text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.78rem;
+  border-color: var(--border);
+  padding: 0 12px;
+}
+
+/* Task list header */
+.jello-gantt ._ZbQT {
+  background: #0e0e1a;
+  border-color: var(--border);
+}
+.jello-gantt ._2QjE6 {
+  color: var(--muted);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.jello-gantt ._2TfEi {
+  color: var(--muted);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.68rem;
+}
+
+/* SVG grid background rows */
+.jello-gantt ._2dZTy {
+  fill: #0b0b13;
+}
+.jello-gantt ._2dZTy:nth-child(even) {
+  fill: rgba(255, 255, 255, 0.02);
+}
+
+/* Grid lines */
+.jello-gantt ._3rUKi {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+.jello-gantt ._RuwuK {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+.jello-gantt ._1rLuZ {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+.jello-gantt ._2eZzQ {
+  stroke: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+
+/* Header date labels */
+.jello-gantt ._9w8d5 {
+  fill: var(--muted);
+  font-family: "DM Sans", sans-serif;
+  font-size: 11px;
+}
+.jello-gantt ._2q1Kt {
+  fill: var(--muted);
+  font-family: "DM Sans", sans-serif;
+  font-size: 11px;
+}
+
+/* Today highlight */
 .jello-gantt ._3ZbQT {
-  fill: rgba(111, 95, 255, 0.18);
+  fill: rgba(111, 95, 255, 0.12);
+}
+
+/* Tooltip */
+.jello-gantt ._3T42e {
+  background: #1a1a2e;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.jello-gantt ._29NTg {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-family: "DM Sans", sans-serif;
+}
+
+/* Bar resize handles */
+.jello-gantt ._3w_5u {
+  fill: rgba(255, 255, 255, 0.3);
+}
+.jello-gantt ._35nLX {
+  fill: #1a1a2e;
+  stroke: var(--border);
+}
+
+/* Arrow */
+.jello-gantt ._2P2B1 {
+  stroke: var(--accent);
+}
+
+/* Scrollbar */
+.jello-gantt ._2k9Ys::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border: 4px solid transparent;
+  background-clip: padding-box;
+}
+.jello-gantt ._1eT-t::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border: 4px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Bar label text colour */
+.jello-gantt ._3zRJQ {
+  fill: rgba(255, 255, 255, 0.9);
+  font-family: "DM Sans", sans-serif;
+  font-size: 11px;
+}
+.jello-gantt ._3KcaM {
+  fill: var(--text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 11px;
 }
