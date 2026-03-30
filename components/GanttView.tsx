@@ -76,7 +76,7 @@ export default function GanttView({ D, onSetZoom, onNav, onGoToday, onOpenDate }
                   const lbl = zoom==='week'
                     ? `${['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]} ${d.getDate()}`
                     : (d.getDate()===1?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' ':'')+d.getDate();
-                  return <th key={i} style={{...thStyle,background:isT?'rgba(111,95,255,.22)':'rgba(18,18,28,.95)',color:isT?'var(--accent)':'var(--muted)',whiteSpace:'nowrap',fontSize:zoom==='week'?'.66rem':'.58rem'}}>{lbl}</th>;
+                  return <th key={i} style={{...thStyle,background:isT?'rgba(111,95,255,.22)':'rgba(18,18,28,.95)',color:isT?'var(--accent)':'var(--muted)',whiteSpace:'nowrap',fontSize:zoom==='week'?'.66rem':'.58rem',boxShadow:'inset -1px 0 0 var(--border)'}}>{lbl}</th>;
                 })}
               </tr>
             </thead>
@@ -143,5 +143,5 @@ export default function GanttView({ D, onSetZoom, onNav, onGoToday, onOpenDate }
   );
 }
 
-const thStyle: React.CSSProperties = { padding:'8px 6px',fontSize:'.66rem',fontWeight:600,textTransform:'uppercase',letterSpacing:.7,color:'var(--muted)',textAlign:'center',borderRight:'1px solid var(--border)',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:10 };
+const thStyle: React.CSSProperties = { padding:'8px 6px',fontSize:'.66rem',fontWeight:600,textTransform:'uppercase',letterSpacing:.7,color:'var(--muted)',textAlign:'center',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:10 };
 const navBtn: React.CSSProperties = { background:'var(--surface)',border:'1px solid var(--border)',color:'var(--text)',width:32,height:32,borderRadius:9,cursor:'pointer',fontSize:'.88rem',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 };
