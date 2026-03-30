@@ -90,10 +90,12 @@ export default function GanttView({ D, onSetZoom, onNav, onGoToday, onOpenDate }
                   const tEnd = t.endDate?new Date(t.endDate+'T00:00:00'):tStart;
                   const inView = tEnd>=startDay && tStart<=endDay;
                   const startMs = startDay.getTime();
-                  const visStart = Math.max(tStart.getTime(),startMs);
-                  const visEnd = Math.min(tEnd.getTime()+mspd,startMs+days*mspd);
-                  const leftPx = Math.round((visStart-startMs)/mspd*cellW);
-                  const widthPx = Math.max(Math.round((visEnd-visStart)/mspd*cellW),6);
+                  // leftCol = first column index the bar occupies
+                  // rightCol = last column index + 1 (exclusive), so bar spans [leftCol, rightCol)
+                  const leftCol  = Math.max(0, Math.round((tStart.getTime()-startMs)/mspd));
+                  const rightCol = Math.min(days, Math.round((tEnd.getTime()-startMs)/mspd)+1);
+                  const leftPx  = leftCol  * cellW;
+                  const widthPx = Math.max((rightCol - leftCol) * cellW, 6);
                   const ol = tStart<startDay, or = tEnd>endDay;
                   const br = `${ol?0:6}px ${or?0:6}px ${or?0:6}px ${ol?0:6}px`;
                   const prog = t.progress||0;
