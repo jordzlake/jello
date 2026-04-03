@@ -261,7 +261,7 @@ export default function ListStyleModal({
       <div
         style={{ fontSize: ".65rem", color: "var(--muted)", marginBottom: 8 }}
       >
-        Powered by Pixabay
+        Powered by Unsplash · cached locally for persistence
       </div>
 
       {error && (
