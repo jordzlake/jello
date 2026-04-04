@@ -43,6 +43,7 @@ export interface ObjComponent {
   text: string;
   done: boolean;
   notes: string;
+  bgColor?: string;
 }
 
 export interface Objective {
