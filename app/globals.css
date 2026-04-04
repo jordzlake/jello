@@ -109,8 +109,17 @@ body.touch-dragging { user-select: none; -webkit-user-select: none; }
 .jello-gantt ._3zRJQ        { fill: rgba(255,255,255,.9); font-family: 'DM Sans', sans-serif; font-size: 11px; }
 .jello-gantt ._3KcaM        { fill: var(--text); font-family: 'DM Sans', sans-serif; font-size: 11px; }
 
-/* Objectives brainstorm float animation */
+
+/* ── Objectives view animations ─────────────────────────────────── */
 @keyframes floatNode {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
-  50%       { transform: translate(-50%, -50%) translateY(-7px); }
+  0%,100% { transform: translate(-50%,-50%) translateY(0px);   }
+  50%      { transform: translate(-50%,-50%) translateY(-8px);  }
+}
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%);  }
+}
+@keyframes bounce {
+  0%,100% { transform: translateY(0);   }
+  50%     { transform: translateY(-4px);}
 }
