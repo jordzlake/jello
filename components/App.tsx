@@ -8,6 +8,7 @@ import Header, { ViewType } from "./Header";
 import BoardView from "./BoardView";
 import CalendarView from "./CalendarView";
 import GanttView from "./GanttView";
+import ObjectivesView from "./ObjectivesView";
 import TaskModal from "./TaskModal";
 import ListStyleModal from "./ListStyleModal";
 import BgModal from "./BgModal";
@@ -302,7 +303,7 @@ export default function App() {
           style={{
             position: "relative",
             zIndex: 2,
-            padding: 20,
+            padding: view === "objectives" ? 0 : 20,
             flex: 1,
           }}
         >
@@ -374,6 +375,7 @@ export default function App() {
               onOpenDate={openDateModal}
             />
           )}
+          {view === "objectives" && <ObjectivesView />}
         </main>
       </div>
 

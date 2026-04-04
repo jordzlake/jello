@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { GlobalState } from "@/lib/types";
 import Image from "next/image";
 
-export type ViewType = "board" | "calendar" | "gantt";
+export type ViewType = "board" | "calendar" | "gantt" | "objectives";
 
 interface Props {
   G: GlobalState;
@@ -216,13 +216,14 @@ export default function Header({
             flexShrink: 0,
           }}
         >
-          {(["board", "calendar", "gantt"] as ViewType[]).map((v, i) => {
+          {(["board", "calendar", "gantt", "objectives"] as ViewType[]).map((v, i) => {
             const icons = [
               "fa-table-columns",
               "fa-regular fa-calendar",
               "fa-bars-progress",
+              "fa-bullseye",
             ];
-            const labels = ["Board", "Calendar", "Gantt"];
+            const labels = ["Board", "Calendar", "Gantt", "Objectives"];
             return (
               <button
                 key={v}

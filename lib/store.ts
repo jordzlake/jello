@@ -274,3 +274,63 @@ export function useStore() {
     loadJson,
   };
 }
+
+// ── Objectives Store ─────────────────────────────────────────────────
+const OBJ_KEY = 'jello_objectives';
+
+export function useObjectivesStore() {
+  const [objectives, setObjectives_] = useState<import('./types').Objective[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(OBJ_KEY);
+      if (raw) setObjectives_(JSON.parse(raw));
+    } catch {}
+    setHydrated(true);
+  }, []);
+
+  const save = (objs: import('./types').Objective[]) => {
+    try { localStorage.setItem(OBJ_KEY, JSON.stringify(objs)); } catch {}
+    setObjectives_(objs);
+  };
+
+  const addObjective = (title: string, description: string, color: string, color2: string) => {
+    const obj: import('./types').Objective = {
+      id: uid(), title, description, color, color2, components: [], createdAt: Date.now(),
+    };
+    save([...objectives, obj]);
+    return obj.id;
+  };
+
+  const updateObjective = (id: string, patch: Partial<import('./types').Objective>) => {
+    save(objectives.map(o => o.id === id ? { ...o, ...patch } : o));
+  };
+
+  const deleteObjective = (id: string) => {
+    save(objectives.filter(o => o.id !== id));
+  };
+
+  const addComponent = (objId: string, text: string) => {
+    save(objectives.map(o => o.id !== objId ? o : {
+      ...o,
+      components: [...o.components, { id: uid(), text, done: false, notes: '' }],
+    }));
+  };
+
+  const updateComponent = (objId: string, compId: string, patch: Partial<import('./types').ObjComponent>) => {
+    save(objectives.map(o => o.id !== objId ? o : {
+      ...o,
+      components: o.components.map(c => c.id !== compId ? c : { ...c, ...patch }),
+    }));
+  };
+
+  const deleteComponent = (objId: string, compId: string) => {
+    save(objectives.map(o => o.id !== objId ? o : {
+      ...o,
+      components: o.components.filter(c => c.id !== compId),
+    }));
+  };
+
+  return { objectives, hydrated, addObjective, updateObjective, deleteObjective, addComponent, updateComponent, deleteComponent };
+}

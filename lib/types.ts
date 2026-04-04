@@ -37,3 +37,20 @@ export interface GlobalState {
   activeDash: string;
   dashboards: Record<string, Dashboard>;
 }
+
+export interface ObjComponent {
+  id: string;
+  text: string;
+  done: boolean;
+  notes: string;
+}
+
+export interface Objective {
+  id: string;
+  title: string;
+  description: string;
+  color: string; // gradient c1
+  color2: string; // gradient c2
+  components: ObjComponent[];
+  createdAt: number;
+}
