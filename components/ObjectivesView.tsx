@@ -859,6 +859,25 @@ function MindMap({
           </div>
         </div>
 
+        {/* ── Hint ─────────────────────────────────────────── */}
+        {notDone.length > 0 && !draggingId && (
+          <div
+            style={{
+              marginTop: 14,
+              fontSize: ".64rem",
+              color: "var(--muted)",
+              background: "rgba(11,11,19,.65)",
+              padding: "4px 14px",
+              borderRadius: 20,
+              backdropFilter: "blur(8px)",
+              textAlign: "center",
+            }}
+          >
+            Drag a pill onto the objective card to complete it · drag back out
+            to undo
+          </div>
+        )}
+
         {notDone.length === 0 ? (
           <div
             style={{
@@ -900,25 +919,6 @@ function MindMap({
                 }
               />
             ))}
-          </div>
-        )}
-
-        {/* ── Hint ─────────────────────────────────────────── */}
-        {notDone.length > 0 && !draggingId && (
-          <div
-            style={{
-              marginTop: 14,
-              fontSize: ".64rem",
-              color: "var(--muted)",
-              background: "rgba(11,11,19,.65)",
-              padding: "4px 14px",
-              borderRadius: 20,
-              backdropFilter: "blur(8px)",
-              textAlign: "center",
-            }}
-          >
-            Drag a pill onto the objective card to complete it · drag back out
-            to undo
           </div>
         )}
       </div>
