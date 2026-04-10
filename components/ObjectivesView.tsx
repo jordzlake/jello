@@ -860,7 +860,7 @@ function MindMap({
         </div>
 
         {/* ── Hint ─────────────────────────────────────────── */}
-        {notDone.length > 0 && !draggingId && (
+        {notDone.length > 0 && (
           <div
             style={{
               margin: 20,
