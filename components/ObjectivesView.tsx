@@ -752,7 +752,7 @@ function MindMap({
                       fontWeight: 900,
                       fontSize: isMobile ? ".95rem" : "1.05rem",
                       lineHeight: 1.22,
-                      background: `linear-gradient(135deg,${obj.color},${obj.color2})`,
+                      background: `linear-gradient(135deg,${obj.color},${obj.color2}) text`,
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       marginBottom: 3,
