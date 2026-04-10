@@ -863,7 +863,7 @@ function MindMap({
         {notDone.length > 0 && !draggingId && (
           <div
             style={{
-              marginTop: 14,
+              margin: 20,
               fontSize: ".64rem",
               color: "var(--muted)",
               background: "rgba(11,11,19,.65)",
