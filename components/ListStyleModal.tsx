@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { cacheImage } from "@/lib/imageCache";
 import Modal, { MLabel, MFooter, BtnPrimary } from "./Modal";
 import { JList, Palette } from "@/lib/types";
 import { PAL } from "@/lib/utils";
@@ -261,7 +262,7 @@ export default function ListStyleModal({
       <div
         style={{ fontSize: ".65rem", color: "var(--muted)", marginBottom: 8 }}
       >
-        Powered by Unsplash · cached locally for persistence
+        Powered by Pixabay
       </div>
 
       {error && (
@@ -310,7 +311,7 @@ export default function ListStyleModal({
             <ImgCell
               key={img.id}
               thumb={img.thumb}
-              onClick={() => onUpdate({ bannerUrl: img.full })}
+              onClick={async () => { const cached = await cacheImage(img.full); onUpdate({ bannerUrl: cached }); }}
             />
           ))}
           {imgs.length === 0 && !loading && !error && (
