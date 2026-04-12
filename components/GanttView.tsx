@@ -188,7 +188,8 @@ export default function GanttView({ D, onSetZoom, onNav, onGoToday, onOpenDate }
                       </td>
 
                       {/* Timeline cell */}
-                      <td colSpan={days} style={{ padding:0, position:'relative', height:rowH, verticalAlign:'middle' }}>
+                      <td colSpan={days} style={{ padding:0, position:'relative', height:rowH, verticalAlign:'middle', width:0, overflow:'hidden' }}>
+                        <div style={{ position:'absolute', inset:0, width: gridW, overflow:'hidden' }}>
                         {showToday && (
                           <div style={{ position:'absolute', top:0, bottom:0, left:todayOff, width:1, background:'rgba(255,95,160,.5)', zIndex:4, pointerEvents:'none' }}/>
                         )}
@@ -219,6 +220,7 @@ export default function GanttView({ D, onSetZoom, onNav, onGoToday, onOpenDate }
                             )}
                           </div>
                         )}
+                        </div>
                       </td>
                     </tr>
                   );
