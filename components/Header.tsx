@@ -200,9 +200,11 @@ export default function Header({
       <div
         style={{
           display: "flex",
+          alignItems: "center",
           justifyContent: "flex-end",
-          width: "100%",
-          gap: "1em",
+          gap: 6,
+          flexShrink: 0,
+          marginLeft: "auto",
         }}
       >
         {/* View toggle */}
