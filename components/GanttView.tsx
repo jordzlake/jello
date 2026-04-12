@@ -99,7 +99,7 @@ export default function GanttView({ D, onSetZoom, onNav, onGoToday, onOpenDate }
             No tasks with dates yet.<br/>Add start/end dates to tasks to see them here.
           </div>
         ) : (
-          <table style={{ borderCollapse:'collapse', tableLayout:'fixed', width: NAME_W + gridW, minWidth:'100%' }}>
+          <table style={{ borderCollapse:'collapse', tableLayout:'fixed', width: NAME_W + gridW }}>
             <colgroup>
               <col style={{ width: NAME_W }}/>
               {colDates.map((_, i) => <col key={i} style={{ width: cellW }}/>)}
