@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { resolveUrl } from "@/lib/imageCache";
 import { useStore } from "@/lib/store";
 import { Task, Palette } from "@/lib/types";
 import { PAL, uid } from "@/lib/utils";
@@ -75,7 +76,7 @@ export default function App() {
     const url = D?.bgUrl;
     const layer = document.getElementById("bg-layer");
     if (layer) {
-      layer.style.backgroundImage = url ? `url(${url})` : "";
+      layer.style.backgroundImage = url ? `url(${resolveUrl(url)})` : "";
       layer.style.opacity = url ? "1" : "0";
     }
   }, [D?.bgUrl, hydrated]);

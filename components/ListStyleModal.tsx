@@ -13,10 +13,10 @@ interface Props {
 }
 
 const PER_PAGE = 9;
-const API_KEY = "55120085-59846e24989333f25ec07ff93";
+const API_KEY = process.env.NEXT_PUBLIC_UNSPLASH_KEY || '';
 
-interface PBImg {
-  id: number;
+interface UImg {
+  id: string;
   thumb: string;
   full: string;
 }
@@ -29,7 +29,7 @@ export default function ListStyleModal({
 }: Props) {
   const [search, setSearch] = useState("landscape");
   const [page, setPage] = useState(1);
-  const [imgs, setImgs] = useState<PBImg[]>([]);
+  const [imgs, setImgs] = useState<UImg[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [allPals, setAllPals] = useState<Palette[]>(PAL);
@@ -46,32 +46,21 @@ export default function ListStyleModal({
 
   const fetchImgs = async (q: string, pg: number) => {
     if (!API_KEY) {
-      setError("Add NEXT_PUBLIC_PIXABAY_KEY to your .env.local file.");
+      setError("Add NEXT_PUBLIC_UNSPLASH_KEY to your .env.local file.");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const url = `https://pixabay.com/api/?key=${API_KEY}&q=${encodeURIComponent(q)}&image_type=photo&orientation=horizontal&per_page=${PER_PAGE}&page=${pg}&safesearch=true`;
+      const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&page=${pg}&per_page=${PER_PAGE}&orientation=landscape&client_id=${API_KEY}`;
       const res = await fetch(url);
+      if (!res.ok) { setError(`Unsplash error ${res.status}`); setLoading(false); return; }
       const data = await res.json();
-      if (data.error) {
-        setError(data.error);
-        setImgs([]);
-      } else
-        setImgs(
-          (data.hits || []).map(
-            (h: {
-              id: number;
-              webformatURL: string;
-              largeImageURL: string;
-            }) => ({
-              id: h.id,
-              thumb: h.webformatURL,
-              full: h.largeImageURL,
-            }),
-          ),
-        );
+      setImgs((data.results || []).map((p: any) => ({
+        id:    p.id,
+        thumb: p.urls.small,
+        full:  p.urls.regular,
+      })));
     } catch {
       setError("Network error — try again.");
     }
@@ -262,7 +251,7 @@ export default function ListStyleModal({
       <div
         style={{ fontSize: ".65rem", color: "var(--muted)", marginBottom: 8 }}
       >
-        Powered by Pixabay
+        Powered by Unsplash
       </div>
 
       {error && (
@@ -311,7 +300,7 @@ export default function ListStyleModal({
             <ImgCell
               key={img.id}
               thumb={img.thumb}
-              onClick={async () => { const cached = await cacheImage(img.full); onUpdate({ bannerUrl: cached }); }}
+              onClick={() => { onUpdate({ bannerUrl: img.full }); cacheImage(img.full); }}
             />
           ))}
           {imgs.length === 0 && !loading && !error && (

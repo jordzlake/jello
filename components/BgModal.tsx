@@ -45,10 +45,10 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
 
   const goTo = (pg: number) => { setPage(pg); fetchImgs(search || 'nature', pg); };
 
-  // Cache the full-res image locally when user picks it
-  const handleSelect = async (full: string) => {
-    const cached = await cacheImage(full);
-    onSelect(cached);
+  // Save original URL immediately (permanent), cache in background for fast reload
+  const handleSelect = (full: string) => {
+    onSelect(full);        // save the stable Unsplash URL
+    cacheImage(full);      // warm the cache in background — fire and forget
   };
 
   return (
@@ -90,14 +90,13 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
 
 function ImgCell({ thumb, onSelect }: { thumb:string; onSelect:()=>void }) {
   const [loaded, setLoaded] = useState(false);
-  const [selecting, setSelecting] = useState(false);
   return (
-    <div onClick={async()=>{ setSelecting(true); await onSelect(); setSelecting(false); }}
-      style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:selecting?'wait':'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
+    <div onClick={()=>{ onSelect(); }}
+      style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
       onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--accent)';e.currentTarget.style.transform='scale(1.04)';}}
       onMouseLeave={e=>{e.currentTarget.style.borderColor='transparent';e.currentTarget.style.transform='';}}
     >
-      {(!loaded||selecting) && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)',fontSize:'.72rem'}}></i></div>}
+      {!loaded && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'var(--muted)',fontSize:'.72rem'}}></i></div>}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={thumb} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:loaded?1:0,transition:'opacity .35s'}}
         onLoad={()=>setLoaded(true)} onError={e=>e.currentTarget.style.opacity='0'} />
