@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import SW from "@/components/SW";
 
@@ -29,6 +29,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0b0b13",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -38,7 +44,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Explicit viewport meta — guaranteed to work on all mobile browsers */}
-        <meta name="theme-color" content="#0b0b13" />
         <link
           href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap"
           rel="stylesheet"

@@ -38,7 +38,7 @@ export default function Header({
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 700);
+    const check = () => setIsMobile(window.innerWidth < 768);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -218,42 +218,44 @@ export default function Header({
             flexShrink: 0,
           }}
         >
-          {(["board", "calendar", "gantt", "objectives"] as ViewType[]).map((v, i) => {
-            const icons = [
-              "fa-table-columns",
-              "fa-regular fa-calendar",
-              "fa-bars-progress",
-              "fa-bullseye",
-            ];
-            const labels = ["Board", "Calendar", "Gantt", "Objectives"];
-            return (
-              <button
-                key={v}
-                onClick={() => onViewChange(v)}
-                style={{
-                  border: "none",
-                  background: view === v ? "var(--accent)" : "transparent",
-                  color: view === v ? "#fff" : "var(--muted)",
-                  fontFamily: "DM Sans,sans-serif",
-                  fontSize: ".74rem",
-                  fontWeight: 500,
-                  padding: isMobile ? "6px 9px" : "6px 12px",
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  transition: "all .2s",
-                  whiteSpace: "nowrap",
-                  boxShadow:
-                    view === v ? "0 0 16px rgba(111,95,255,.4)" : "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <i className={`fa-solid ${icons[i]}`}></i>
-                {!isMobile && labels[i]}
-              </button>
-            );
-          })}
+          {(["board", "calendar", "gantt", "objectives"] as ViewType[]).map(
+            (v, i) => {
+              const icons = [
+                "fa-table-columns",
+                "fa-regular fa-calendar",
+                "fa-bars-progress",
+                "fa-bullseye",
+              ];
+              const labels = ["Board", "Calendar", "Gantt", "Objectives"];
+              return (
+                <button
+                  key={v}
+                  onClick={() => onViewChange(v)}
+                  style={{
+                    border: "none",
+                    background: view === v ? "var(--accent)" : "transparent",
+                    color: view === v ? "#fff" : "var(--muted)",
+                    fontFamily: "DM Sans,sans-serif",
+                    fontSize: ".74rem",
+                    fontWeight: 500,
+                    padding: isMobile ? "6px 9px" : "6px 12px",
+                    borderRadius: 7,
+                    cursor: "pointer",
+                    transition: "all .2s",
+                    whiteSpace: "nowrap",
+                    boxShadow:
+                      view === v ? "0 0 16px rgba(111,95,255,.4)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <i className={`fa-solid ${icons[i]}`}></i>
+                  {!isMobile && labels[i]}
+                </button>
+              );
+            },
+          )}
         </div>
 
         {/* Desktop action buttons */}
