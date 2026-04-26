@@ -1,15 +1,8 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import SW from "@/components/SW";
 
 // Metadata without viewport — we set viewport via explicit meta tag below
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  viewportFit: "cover",
-  themeColor: "#0b0b13",
-};
 
 export const metadata: Metadata = {
   title: "JELLO",
