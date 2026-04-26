@@ -300,7 +300,7 @@ export default function ListStyleModal({
             <ImgCell
               key={img.id}
               thumb={img.thumb}
-              onClick={() => { onUpdate({ bannerUrl: img.full }); cacheImage(img.full); }}
+              onClick={async () => { const b64 = await cacheImage(img.full); onUpdate({ bannerUrl: b64 }); }}
             />
           ))}
           {imgs.length === 0 && !loading && !error && (

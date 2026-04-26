@@ -45,10 +45,10 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
 
   const goTo = (pg: number) => { setPage(pg); fetchImgs(search || 'nature', pg); };
 
-  // Save original URL immediately (permanent), cache in background for fast reload
-  const handleSelect = (full: string) => {
-    onSelect(full);        // save the stable Unsplash URL
-    cacheImage(full);      // warm the cache in background — fire and forget
+  // Download image, store as base64, save base64 to store — fully persistent
+  const handleSelect = async (full: string) => {
+    const base64 = await cacheImage(full);
+    onSelect(base64);
   };
 
   return (
@@ -91,7 +91,7 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
 function ImgCell({ thumb, onSelect }: { thumb:string; onSelect:()=>void }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div onClick={()=>{ onSelect(); }}
+    <div onClick={async()=>{ await onSelect(); }}
       style={{aspectRatio:'16/9',borderRadius:7,overflow:'hidden',background:'var(--surface2)',cursor:'pointer',position:'relative',border:'2px solid transparent',transition:'all .18s'}}
       onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--accent)';e.currentTarget.style.transform='scale(1.04)';}}
       onMouseLeave={e=>{e.currentTarget.style.borderColor='transparent';e.currentTarget.style.transform='';}}

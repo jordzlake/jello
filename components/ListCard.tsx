@@ -1,6 +1,5 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { resolveUrl } from "@/lib/imageCache";
 import { JList, Task, Palette } from "@/lib/types";
 import TaskCard from "./TaskCard";
 
@@ -160,7 +159,7 @@ export default function ListCard({
         {list.bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={resolveUrl(list.bannerUrl)}
+            src={list.bannerUrl ?? ""}
             alt=""
             style={{
               position: "absolute",
