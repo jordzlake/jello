@@ -40,6 +40,7 @@ export default function BoardView({
 
   return (
     <div
+      className="board-scroll"
       style={{
         display: "flex",
         gap: 15,

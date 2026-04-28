@@ -55,87 +55,26 @@ body.touch-dragging { user-select: none; -webkit-user-select: none; }
   .list-drag-handle-desktop { display: none; }
 }
 
-/* ── gantt-task-react dark theme (complete) ─────────────────────── */
+/* ── Responsive layout — CSS only, no JS breakpoints ──────────────── */
 
-/* Wrapper */
-.jello-gantt { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: #0b0b13; }
+/* Objectives sidebar: desktop = static, mobile = fixed slide-in */
+.obj-sidebar     { position: relative; left: auto; }
+.obj-close-btn   { display: none; }
+.obj-topbar      { display: none !important; }
+.obj-overlay     { display: none; }
 
-/* ── Left panel (task list table) ── */
-.jello-gantt ._3_ygE        { background: #0e0e1a; border-color: var(--border) !important; }
-.jello-gantt ._1nBOt        { background: #0e0e1a; }
-.jello-gantt ._WuQ0f        { background: #0e0e1a; border-color: var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .8rem; }
-.jello-gantt ._34SS0        { background: #0b0b13 !important; }
-.jello-gantt ._34SS0:nth-of-type(even) { background: rgba(255,255,255,.025) !important; }
-.jello-gantt ._3lLk3        { color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .78rem; border-color: rgba(255,255,255,.06) !important; padding: 0 12px; }
+@media (max-width: 700px) {
+  /* Objectives */
+  .obj-sidebar   { position: fixed; top: 0; bottom: 0; left: -280px; z-index: 95; width: 240px !important; }
+  .obj-sidebar.open { left: 0; }
+  .obj-close-btn { display: flex !important; }
+  .obj-topbar    { display: flex !important; }
+  .obj-overlay   { display: block; }
 
-/* Task list header row */
-.jello-gantt ._3ZbQT        { background: #0e0e1a; border-color: var(--border) !important; }
-.jello-gantt ._2QjE6        { color: var(--muted) !important; font-family: 'DM Sans', sans-serif; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; }
-.jello-gantt ._2TfEi        { color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .68rem; }
+  /* Board: stack lists vertically */
+  .board-scroll  { flex-direction: column !important; align-items: stretch !important; }
+  .board-list    { width: 100% !important; min-width: 0 !important; max-width: 100% !important; flex-shrink: 0; }
 
-/* ── SVG timeline area ── */
-/* Row background fills */
-.jello-gantt ._2dZTy        { fill: #0b0b13 !important; }
-.jello-gantt ._2dZTy:nth-child(even) { fill: rgba(255,255,255,.018) !important; }
-
-/* Grid lines */
-.jello-gantt ._3rUKi        { stroke: rgba(255,255,255,.06) !important; }
-.jello-gantt ._RuwuK        { stroke: rgba(255,255,255,.06) !important; }
-.jello-gantt ._1rLuZ        { stroke: rgba(255,255,255,.06) !important; }
-
-/* Column separators in left panel */
-.jello-gantt ._2eZzQ        { border-right-color: rgba(255,255,255,.06) !important; opacity: 1; }
-
-/* Header date label text */
-.jello-gantt ._9w8d5        { fill: var(--muted) !important; font-family: 'DM Sans', sans-serif; font-size: 11px; }
-.jello-gantt ._2q1Kt        { fill: var(--muted) !important; font-family: 'DM Sans', sans-serif; font-size: 11px; }
-
-/* Today column highlight */
-.jello-gantt ._3ZbQT rect,
-.jello-gantt rect._3ZbQT    { fill: rgba(111,95,255,.12) !important; }
-
-/* ── Outer wrappers that can show white ── */
-.jello-gantt ._CZjuD        { background: #0b0b13; overflow: hidden; }
-.jello-gantt ._2B2zv        { background: #0b0b13; }
-.jello-gantt ._3eULf        { background: #0b0b13; }
-.jello-gantt ._nI1Xw        { background: #0e0e1a; }
-
-/* Bar label text */
-.jello-gantt ._3zRJQ        { fill: rgba(255,255,255,.92) !important; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; }
-.jello-gantt ._3KcaM        { fill: var(--text) !important; font-family: 'DM Sans', sans-serif; font-size: 11px; }
-
-/* Milestone diamond */
-.jello-gantt ._35nLX        { fill: #1a1a2e !important; stroke: var(--accent) !important; }
-
-/* Bar resize handles */
-.jello-gantt ._3w_5u        { fill: rgba(255,255,255,.28); }
-
-/* Arrow / dependency */
-.jello-gantt ._2P2B1        { stroke: var(--accent); }
-
-/* Tooltip */
-.jello-gantt ._3T42e        { background: rgba(18,18,30,.98) !important; border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,.6); border-radius: 10px; padding: 10px 14px; }
-.jello-gantt ._29NTg        { color: var(--muted) !important; font-size: .72rem; font-family: 'DM Sans', sans-serif; }
-
-/* ── Scrollbars ── */
-/* Horizontal scrollbar track */
-.jello-gantt ._2k9Ys {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(111,95,255,.55) rgba(255,255,255,.04);
+  /* General spacing */
+  .main-content  { padding: 12px !important; }
 }
-.jello-gantt ._2k9Ys::-webkit-scrollbar        { height: 8px; }
-.jello-gantt ._2k9Ys::-webkit-scrollbar-track   { background: rgba(255,255,255,.04); border-radius: 4px; }
-.jello-gantt ._2k9Ys::-webkit-scrollbar-thumb   { background: rgba(111,95,255,.55); border-radius: 4px; border: none; }
-.jello-gantt ._2k9Ys::-webkit-scrollbar-thumb:hover { background: rgba(111,95,255,.85); }
-.jello-gantt ._2k9Ys::-webkit-scrollbar-corner  { background: #0b0b13; }
-
-/* Vertical scrollbar (right edge) */
-.jello-gantt ._1eT-t {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.15) transparent;
-}
-.jello-gantt ._1eT-t::-webkit-scrollbar        { width: 6px; }
-.jello-gantt ._1eT-t::-webkit-scrollbar-track   { background: transparent; }
-.jello-gantt ._1eT-t::-webkit-scrollbar-thumb   { background: rgba(255,255,255,.15); border-radius: 3px; border: none; }
-.jello-gantt ._1eT-t::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); }
-
