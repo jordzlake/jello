@@ -27,7 +27,6 @@ export default function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef  = useRef<HTMLDivElement>(null);
   const fileRef  = useRef<HTMLInputElement>(null);
-  const fileRef2 = useRef<HTMLInputElement>(null);
   const dashIds  = Object.keys(G.dashboards);
 
   useEffect(() => {
@@ -195,9 +194,11 @@ export default function Header({
                 <DI icon="fa-image"       label="Background" onClick={() => { onOpenBg();                    setMenuOpen(false); }}/>
                 <DI icon="fa-box-archive" label="Archive"    onClick={() => { onOpenArchive();               setMenuOpen(false); }}/>
                 <DI icon="fa-download"    label="Save JSON"  onClick={() => { onSaveJson();                  setMenuOpen(false); }}/>
-                <DI icon="fa-upload"      label="Load JSON"  onClick={() => { fileRef2.current?.click();     setMenuOpen(false); }}/>
-                <input ref={fileRef2} type="file" accept=".json" style={{ display:"none" }}
-                  onChange={e => { const f=e.target.files?.[0]; if(f){onLoadJson(f);e.target.value="";} }}/>
+                <label style={{ display:"block", cursor:"pointer" }}>
+                  <input type="file" accept=".json" style={{ display:"none" }}
+                    onChange={e => { const f=e.target.files?.[0]; if(f){onLoadJson(f);e.target.value="";setMenuOpen(false);} }}/>
+                  <DI icon="fa-upload" label="Load JSON" onClick={() => {}}/>
+                </label>
               </div>
             )}
           </div>
