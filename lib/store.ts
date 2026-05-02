@@ -214,7 +214,14 @@ export function useStore() {
 
   // ── Save / Load JSON ──
   const saveJson = () => {
-    const blob = new Blob([JSON.stringify(G, null, 2)], {
+    // Include objectives from their own localStorage key so everything is in one file
+    let objectives: any[] = [];
+    try {
+      const raw = localStorage.getItem('jello_objectives');
+      if (raw) objectives = JSON.parse(raw);
+    } catch {}
+    const export_ = { ...G, objectives };
+    const blob = new Blob([JSON.stringify(export_, null, 2)], {
       type: "application/json",
     });
     const a = document.createElement("a");
@@ -275,6 +282,35 @@ export function useStore() {
             try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
             return next;
           });
+          // Restore objectives if present in the file (new format)
+          // Old files without objectives key are silently ignored — backwards compatible
+          const incomingObjs = (p as any).objectives;
+          if (Array.isArray(incomingObjs) && incomingObjs.length > 0) {
+            try {
+              const existing: any[] = JSON.parse(localStorage.getItem('jello_objectives') || '[]');
+              // Merge: add objectives that don't exist by ID, ask to replace those that do by title
+              const merged = [...existing];
+              for (const obj of incomingObjs) {
+                const byId    = merged.findIndex(o => o.id    === obj.id);
+                const byTitle = merged.findIndex(o => o.title === obj.title);
+                if (byId !== -1) {
+                  // Same ID — replace silently (same objective, updated data)
+                  merged[byId] = obj;
+                } else if (byTitle !== -1) {
+                  // Same title, different ID — ask
+                  const replace = window.confirm(
+                    `An objective named "${obj.title}" already exists.
+Replace it with the imported version?`
+                  );
+                  if (replace) merged[byTitle] = obj;
+                } else {
+                  merged.push(obj);
+                }
+              }
+              localStorage.setItem('jello_objectives', JSON.stringify(merged));
+            } catch {}
+          }
+
           resolve();
         } catch {
           reject(new Error("Invalid Jello save file."));
