@@ -88,7 +88,7 @@ export default function ObjectivesView() {
   };
 
   return (
-    <div style={{ display:'flex', height:'100%', minHeight:0, overflow:'hidden', position:'relative' }}>
+    <div style={{ display:'flex', height:'100%', width:'100%', minHeight:0, overflow:'hidden', position:'relative', flex:1 }}>
 
       {/* ── Mobile sidebar overlay ─────────────────────────── */}
       {sideOpen && (
@@ -108,7 +108,7 @@ export default function ObjectivesView() {
         height: '100%',
       }}>
         <div style={{ padding:'16px 14px 10px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
-          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:'.78rem', letterSpacing:1.4, textTransform:'uppercase', color:'var(--muted)' }}>
+          <span style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:800, fontSize:'.78rem', letterSpacing:1.4, textTransform:'uppercase', color:'var(--muted)' }}>
             Objectives
           </span>
           <div style={{ display:'flex', gap:5 }}>
@@ -131,7 +131,7 @@ export default function ObjectivesView() {
               <div key={obj.id}
                 onClick={() => { setSelectedId(obj.id); setSideOpen(false); }}
                 style={{
-                  position:'relative', overflow:'hidden', borderRadius:12,
+                  position:'relative', overflow:'clip', borderRadius:12,
                   marginBottom:6, padding:'11px 13px', cursor:'pointer',
                   border:`1px solid ${active ? obj.color : 'var(--border)'}`,
                   background: active ? `rgba(${rgb(obj.color)},.13)` : 'rgba(255,255,255,.025)',
@@ -153,11 +153,11 @@ export default function ObjectivesView() {
       </aside>
 
       {/* ── Canvas ──────────────────────────────────────────── */}
-      <main style={{ flex:1, position:'relative', overflow:'hidden', minHeight:0, display:'flex', flexDirection:'column' }}>
+      <main style={{ flex:1, position:'relative', minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden' }}>
         {/* Mobile top bar */}
         <div className="obj-topbar" style={{ padding:'10px 14px', display:'none', alignItems:'center', gap:10, borderBottom:'1px solid var(--border)', background:'rgba(11,11,19,.7)', flexShrink:0 }}>
             <button onClick={() => setSideOpen(true)} style={iconBtn}><i className="fa-solid fa-bars"/></button>
-            <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:'.82rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
+            <span style={{ fontFamily:'Space Grotesk,sans-serif', fontWeight:700, fontSize:'.82rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
               {selected ? selected.title : 'Objectives'}
             </span>
           </div>
@@ -230,13 +230,14 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const centerRef    = useRef<HTMLDivElement>(null);
+  const pillAreaRef  = useRef<HTMLDivElement>(null);
   const pillRefs     = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Pill free positions (relative to canvas)
+  // Pill free positions — stored as % of container width/height so they survive resize
   const [pillPos,   setPillPos]   = useState<PosMap>(() => loadPillPositions(obj.id));
-  // Which pill is being repositioned (free drag)
   const [movingId,  setMovingId]  = useState<string|null>(null);
-  const moveOffset = useRef({ dx: 0, dy: 0 });
+  // For free drag: offset from pill top-left to pointer, in px
+  const grabOffset  = useRef({ dx: 0, dy: 0 });
 
   // Drop-on-center drag state
   const [draggingId,   setDraggingId]   = useState<string|null>(null);
@@ -296,28 +297,49 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
     return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
   }, []);
 
-  // Combined pointer handlers — handles both free-move and drop-on-center
+  // Combined pointer handlers
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (movingId) {
-      // Free repositioning
-      const cr = containerRef.current!.getBoundingClientRect();
-      const pillAreaTop = centerRef.current ? (centerRef.current.getBoundingClientRect().bottom - cr.top + 20) : 200;
-      const nx = e.clientX - cr.left - moveOffset.current.dx;
-      const ny = Math.max(pillAreaTop, e.clientY - cr.top - moveOffset.current.dy);
-      setPillPos(prev => {
-        const next = { ...prev, [movingId]: { x: nx, y: ny } };
-        savePillPositions(obj.id, next);
-        return next;
-      });
+      const area = pillAreaRef.current;
+      if (!area) return;
+      const ar = area.getBoundingClientRect();
+      // Pointer position relative to pills area top-left
+      const nx = e.clientX - ar.left - grabOffset.current.dx;
+      const ny = e.clientY - ar.top  - grabOffset.current.dy;
+      setPillPos(prev => ({ ...prev, [movingId]: { x: nx, y: ny } }));
       return;
     }
     if (!draggingId) return;
     setDragPos({ x: e.clientX, y: e.clientY });
     setOverCenter(isOverCenter(e.clientX, e.clientY));
-  }, [movingId, draggingId, isOverCenter, obj.id]);
+  }, [movingId, draggingId, isOverCenter]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
-    if (movingId) { setMovingId(null); recomputeLines(); return; }
+    if (movingId) {
+      const area = pillAreaRef.current;
+      const id   = movingId;
+      setMovingId(null);
+      // If dropped on center card — complete the component
+      if (isOverCenter(e.clientX, e.clientY)) {
+        setPulse(true); setJustDone(id);
+        onToggle(id);
+        setTimeout(() => setPulse(false), 700);
+        setTimeout(() => setJustDone(null), 800);
+        return;
+      }
+      if (area) {
+        const ar = area.getBoundingClientRect();
+        const nx = e.clientX - ar.left - grabOffset.current.dx;
+        const ny = e.clientY - ar.top  - grabOffset.current.dy;
+        setPillPos(prev => {
+          const next = { ...prev, [id]: { x: nx, y: ny } };
+          savePillPositions(obj.id, next);
+          return next;
+        });
+        setTimeout(recomputeLines, 30);
+      }
+      return;
+    }
     if (!draggingId) return;
     if (isOverCenter(e.clientX, e.clientY)) {
       const id = draggingId;
@@ -328,7 +350,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
     }
     setDraggingId(null);
     setOverCenter(false);
-  }, [movingId, draggingId, isOverCenter, onToggle, recomputeLines]);
+  }, [movingId, draggingId, isOverCenter, onToggle, recomputeLines, obj.id]);
 
   const startDropDrag = useCallback((id: string, clientX: number, clientY: number) => {
     setDraggingId(id);
@@ -336,23 +358,31 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
   }, []);
 
   const startMove = useCallback((id: string, clientX: number, clientY: number) => {
-    const el = pillRefs.current.get(id);
-    if (!el || !containerRef.current) return;
-    const cr = containerRef.current.getBoundingClientRect();
-    const pr = el.getBoundingClientRect();
-    moveOffset.current = {
-      dx: clientX - (pr.left - cr.left),
-      dy: clientY - (pr.top  - cr.top),
+    const pillEl = pillRefs.current.get(id);
+    const area   = pillAreaRef.current;
+    if (!pillEl || !area) return;
+    const ar = area.getBoundingClientRect();
+    const pr = pillEl.getBoundingClientRect();
+    // Pill position relative to the pills area div
+    const pillX = pr.left - ar.left;
+    const pillY = pr.top  - ar.top;
+    // Where within the pill the pointer landed
+    grabOffset.current = {
+      dx: clientX - ar.left - pillX,
+      dy: clientY - ar.top  - pillY,
     };
+    // Snapshot pill position (switches from CSS calc% to px seamlessly)
+    setPillPos(prev => ({ ...prev, [id]: { x: pillX, y: pillY } }));
     setMovingId(id);
   }, []);
+
 
   return (
     <div
       ref={containerRef}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      style={{ width:'100%', height:'100%', overflow:'auto', position:'relative', touchAction: draggingId ? 'none' : 'auto' }}
+      style={{ width:'100%', height:'100%', overflow:'auto', overflowX:'hidden', position:'relative', flex:1, touchAction: draggingId ? 'none' : 'auto' }}
     >
       {/* Ambient glow */}
       <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse at 50% 40%, rgba(${rgb(obj.color)},.07) 0%, transparent 60%)`, pointerEvents:'none', zIndex:0 }}/>
@@ -360,7 +390,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
       {/* SVG connector lines */}
       <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:1, overflow:'visible' }}>
         <defs>
-          <linearGradient id={`lg-${obj.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`lg_${obj.id}_${obj.color.replace('#','')}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={obj.color}/>
             <stop offset="100%" stopColor={obj.color2}/>
           </linearGradient>
@@ -368,7 +398,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
         {lines.map(l => (
           <line key={l.id}
             x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-            stroke={`url(#lg-${obj.id})`}
+            stroke={`url(#lg_${obj.id}_${obj.color.replace('#','')})`}
             strokeWidth={draggingId === l.id ? 2.5 : 1.5}
             strokeOpacity={draggingId === l.id ? 0.9 : 0.25}
             strokeDasharray={draggingId === l.id ? '6 3' : '5 5'}
@@ -378,12 +408,12 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
       </svg>
 
       {/* Main layout: center card on top, pills freely positioned below */}
-      <div style={{ position:'relative', zIndex:2, display:'flex', flexDirection:'column', alignItems:'center', padding:'20px 16px 0', minHeight:'100%' }}>
+      <div style={{ position:'relative', zIndex:2, display:'flex', flexDirection:'column', alignItems:'center', padding:'20px 16px 0', width:'100%' }}>
 
         {/* ── Add component + Center card ──────────────────── */}
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, width:'100%', maxWidth:340 }}>
           <button onClick={onAddComp}
-            style={{ background:`rgba(${rgb(obj.color)},.16)`, border:`1px dashed rgba(${rgb(obj.color)},.5)`, borderRadius:10, color:obj.color, fontFamily:'DM Sans,sans-serif', fontSize:'.76rem', fontWeight:700, padding:'7px 18px', cursor:'pointer', display:'flex', alignItems:'center', gap:6, transition:'all .2s', width:'100%', justifyContent:'center' }}
+            style={{ background:`rgba(${rgb(obj.color)},.10)`, border:`1px dashed rgba(${rgb(obj.color)},.35)`, borderRadius:10, color:obj.color, fontFamily:'DM Sans,sans-serif', fontSize:'.76rem', fontWeight:700, padding:'7px 18px', cursor:'pointer', display:'flex', alignItems:'center', gap:6, transition:'all .2s', width:'100%', justifyContent:'center' }}
             onMouseEnter={e=>e.currentTarget.style.background=`rgba(${rgb(obj.color)},.28)`}
             onMouseLeave={e=>e.currentTarget.style.background=`rgba(${rgb(obj.color)},.16)`}>
             <i className="fa-solid fa-plus" style={{fontSize:'.65rem'}}/> Add Component
@@ -393,7 +423,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
           <div ref={centerRef} style={{
             width:'100%', borderRadius:22,
             border:`2px solid ${overCenter ? '#fff' : obj.color}`,
-            background:`linear-gradient(145deg,rgba(${rgb(obj.color)},.17),rgba(${rgb(obj.color2)},.09))`,
+            background:`linear-gradient(145deg,rgba(${rgb(obj.color)},.10),rgba(${rgb(obj.color2)},.06))`,
             backdropFilter:'blur(22px)',
             boxShadow: pulse
               ? `0 0 0 10px rgba(${rgb(obj.color)},.22), 0 0 80px rgba(${rgb(obj.color)},.55)`
@@ -410,9 +440,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
             <div style={{ padding:'18px 18px 12px', borderBottom:'1px solid rgba(255,255,255,.07)' }}>
               <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:10 }}>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontFamily:'Syne,sans-serif', fontWeight:900, fontSize: 'clamp(.88rem, 3vw, 1.05rem)', lineHeight:1.22, background:`linear-gradient(135deg,${obj.color},${obj.color2})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:3 }}>
-                    {obj.title}
-                  </div>
+                  <GradientText color={obj.color} color2={obj.color2}>{obj.title}</GradientText>
                   {obj.description && (
                     <div style={{ fontSize:'.7rem', color:'var(--muted)', lineHeight:1.5 }}>{obj.description}</div>
                   )}
@@ -420,7 +448,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
                 <ObjMenu onEdit={onEditObj} onDelete={onDeleteObj}/>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <ProgressRing pct={pct} color={obj.color} color2={obj.color2} size={44}/>
+                <ProgressRing pct={pct} color={obj.color} color2={obj.color2} size={44} uid={obj.id}/>
                 <div>
                   <div style={{ fontSize:'.8rem', fontWeight:700 }}>{pct}% complete</div>
                   <div style={{ fontSize:'.63rem', color:'var(--muted)' }}>{done.length}/{total} · +{stepPct}% each</div>
@@ -462,19 +490,44 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
 
         {/* ── Pills area — freely positioned below center card ── */}
         {notDone.length > 0 && (
-          <div style={{ position:'relative', width:'100%', minHeight: Math.ceil(notDone.length / 3) * 90 + 40, marginTop:16 }}>
+          <div
+            ref={pillAreaRef}
+            style={{
+              position:'relative', width:'100%',
+              height: Math.max(Math.ceil(notDone.length / 3) * 120 + 80, 200),
+              marginTop:24, marginBottom:40,
+              overflow:'visible',
+            }}
+          >
             {notDone.map((comp, i) => {
-              const cw = containerRef.current?.offsetWidth || 600;
-              const pos = pillPos[comp.id] ?? getDefaultPos(comp.id, i, notDone.length, cw);
+              const hasSaved = !!pillPos[comp.id];
+              // Only use absolute positioning if user has explicitly moved this pill
+              // Otherwise use a CSS grid-like default layout via top/left math
+              // We compute default positions using percentage-based offsets so they
+              // work regardless of when containerRef is measured
+              const cols = Math.min(notDone.length, 4);
+              const col  = i % cols;
+              const row  = Math.floor(i / cols);
+              const defaultX = `calc(${(col / Math.max(cols-1,1)) * 80 + 10}% - 60px)`;
+              const defaultY = row * 95 + 8;
+              const savedPos = pillPos[comp.id];
+
               return (
                 <div
                   key={comp.id}
                   ref={el => { if (el) pillRefs.current.set(comp.id, el); else pillRefs.current.delete(comp.id); }}
-                  style={{ position:'absolute', left: pos.x, top: pos.y, zIndex: movingId === comp.id ? 50 : 5, cursor: movingId === comp.id ? 'grabbing' : 'grab', touchAction:'none', userSelect:'none' }}
+                  style={{
+                    position: 'absolute',
+                    left: hasSaved ? (savedPos as any).x : defaultX,
+                    top:  hasSaved ? (savedPos as any).y : defaultY,
+                    zIndex: movingId === comp.id ? 9999 : 5,
+                    touchAction:'none', userSelect:'none',
+                    transition: movingId === comp.id ? 'none' : 'none',
+                    pointerEvents: movingId !== null && movingId !== comp.id ? 'none' : 'auto',
+                  }}
                   onPointerDown={e => {
                     if ((e.target as HTMLElement).closest('[data-nd]')) return;
                     e.currentTarget.setPointerCapture(e.pointerId);
-                    // Short press = reposition, long hold threshold not needed — just start moving
                     startMove(comp.id, e.clientX, e.clientY);
                   }}
                 >
@@ -681,11 +734,25 @@ function ObjMenu({ onEdit, onDelete }: { onEdit:()=>void; onDelete:()=>void }) {
   );
 }
 
+// GradientText — uses a style tag with unique class per color combo
+// This is the only reliable way to force -webkit-background-clip:text to repaint on color change
+function GradientText({ color, color2, children }: { color:string; color2:string; children:React.ReactNode }) {
+  const cls = `gt_${color.replace('#','')}${color2.replace('#','')}`;
+  return (
+    <>
+      <style>{`.${cls}{font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:clamp(1.1rem,3vw,1.5rem);line-height:1.22;background-image:linear-gradient(135deg,${color},${color2});-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;display:inline-block;width:100%;margin-bottom:3px;padding:2px 0;}`}</style>
+      <div className={cls}>{children}</div>
+    </>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Progress ring
 // ─────────────────────────────────────────────────────────────────────
-function ProgressRing({ pct,color,color2,size }:{ pct:number;color:string;color2:string;size:number }) {
-  const r = (size-5)/2, circ = 2*Math.PI*r, id=`pr${color.slice(1,5)}`;
+function ProgressRing({ pct,color,color2,size,uid: ringUid }:{ pct:number;color:string;color2:string;size:number;uid?:string }) {
+  const r = (size-5)/2, circ = 2*Math.PI*r;
+  // Include full color hex in id to prevent cross-objective SVG gradient collisions
+  const id = `pr_${(ringUid||'')+color.replace('#','')+color2.replace('#','')}`;
   return (
     <svg width={size} height={size} style={{flexShrink:0}}>
       <defs><linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor={color}/><stop offset="100%" stopColor={color2}/></linearGradient></defs>
@@ -707,7 +774,7 @@ function EmptyState({ onAdd }:{ onAdd:()=>void }) {
   return (
     <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:14,color:'var(--muted)',padding:24}}>
       <div style={{fontSize:'2.4rem',opacity:.18}}>◎</div>
-      <div style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'.95rem',color:'var(--text)',textAlign:'center'}}>No objective selected</div>
+      <div style={{fontFamily:'Space Grotesk,sans-serif',fontWeight:800,fontSize:'.95rem',color:'var(--text)',textAlign:'center'}}>No objective selected</div>
       <div style={{fontSize:'.78rem',textAlign:'center'}}>Pick one from the sidebar or create a new one</div>
       <button onClick={onAdd} style={{marginTop:6,background:'var(--accent)',border:'none',color:'#fff',fontFamily:'DM Sans,sans-serif',fontSize:'.8rem',padding:'9px 22px',borderRadius:11,cursor:'pointer',fontWeight:600,boxShadow:'0 0 22px rgba(111,95,255,.4)'}}>
         <i className="fa-solid fa-plus" style={{marginRight:6}}/>New Objective
@@ -763,7 +830,7 @@ function EditObjModal({obj,onClose,onSave}:{obj:Objective;onClose:()=>void;onSav
 // Shared primitives
 // ─────────────────────────────────────────────────────────────────────
 function Ov({children,onClose}:{children:React.ReactNode;onClose:()=>void}){return(<div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.65)',backdropFilter:'blur(6px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}><div onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:420}}>{children}</div></div>);}
-function MB({title,children,onClose}:{title:string;children:React.ReactNode;onClose:()=>void}){return(<div style={{background:'rgba(16,16,26,.98)',border:'1px solid var(--border)',borderRadius:18,padding:'22px 20px',boxShadow:'0 32px 80px rgba(0,0,0,.7)',animation:'modalIn .22s cubic-bezier(.34,1.56,.64,1)'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}><span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'.92rem'}}>{title}</span><button onClick={onClose} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'.9rem'}}>✕</button></div>{children}</div>);}
+function MB({title,children,onClose}:{title:string;children:React.ReactNode;onClose:()=>void}){return(<div style={{background:'rgba(16,16,26,.98)',border:'1px solid var(--border)',borderRadius:18,padding:'22px 20px',boxShadow:'0 32px 80px rgba(0,0,0,.7)',animation:'modalIn .22s cubic-bezier(.34,1.56,.64,1)'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}><span style={{fontFamily:'Space Grotesk,sans-serif',fontWeight:800,fontSize:'.92rem'}}>{title}</span><button onClick={onClose} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'.9rem'}}>✕</button></div>{children}</div>);}
 function Lb({children}:{children:React.ReactNode}){return <div style={{fontSize:'.69rem',color:'var(--muted)',marginBottom:5,textTransform:'uppercase',letterSpacing:.9}}>{children}</div>;}
 function In({value,set,ph,af,onEnt}:{value:string;set:(v:string)=>void;ph?:string;af?:boolean;onEnt?:()=>void}){return <input value={value} onChange={e=>set(e.target.value)} placeholder={ph} autoFocus={af} onKeyDown={e=>e.key==='Enter'&&onEnt?.()} style={{width:'100%',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text)',fontFamily:'DM Sans,sans-serif',fontSize:'.85rem',padding:'9px 12px',outline:'none',marginBottom:14,boxSizing:'border-box'}}/>;}
 function Pal({pi,setPi}:{pi:number;setPi:(i:number)=>void}){return(<div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:18}}>{ACCENT_PAIRS.map(([c1,c2],i)=>(<div key={i} onClick={()=>setPi(i)} style={{width:28,height:28,borderRadius:7,cursor:'pointer',background:`linear-gradient(135deg,${c1},${c2})`,border:`2px solid ${i===pi?'#fff':'transparent'}`,transition:'all .18s',transform:i===pi?'scale(1.2)':'scale(1)'}}/>))}</div>);}

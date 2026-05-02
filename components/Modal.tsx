@@ -17,7 +17,7 @@ export default function Modal({ open, onClose, title, children, maxWidth=500 }: 
         animation:'modalIn .28s cubic-bezier(.34,1.56,.64,1)',
         maxHeight:'92vh',overflowY:'auto',
       }}>
-        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:700,marginBottom:16,fontSize:'.98rem',display:'flex',alignItems:'center',gap:7}}>{title}</h3>
+        <h3 style={{fontFamily:'Space Grotesk,sans-serif',fontWeight:700,marginBottom:16,fontSize:'.98rem',display:'flex',alignItems:'center',gap:7}}>{title}</h3>
         {children}
       </div>
     </div>

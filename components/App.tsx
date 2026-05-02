@@ -270,7 +270,8 @@ export default function App() {
         style={{
           position: "relative",
           zIndex: 2,
-          minHeight: "100vh",
+          height: "100vh",
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
         }}
@@ -305,6 +306,10 @@ export default function App() {
             zIndex: 2,
             padding: view === "objectives" ? 0 : 20,
             flex: 1,
+            minHeight: 0,
+            overflow: view === "objectives" ? "hidden" : "auto",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {view === "board" && (

@@ -76,7 +76,7 @@ export default function Header({
         <a href="#" style={{ display:"flex", alignItems:"center", gap:8, textDecoration:"none", flexShrink:0 }}>
           <Image src="/icons/icon.svg" alt="Jello" width={32} height={32} />
           <span className="hdr-logo-text" style={{
-            fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:"1.28rem",
+            fontFamily:"Space Grotesk,sans-serif", fontWeight:800, fontSize:"1.28rem",
             letterSpacing:"2.5px", textTransform:"uppercase",
             background:"linear-gradient(135deg,#00d26a 0%,#ff81f5 55%,#ffd26b 100%)",
             WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",

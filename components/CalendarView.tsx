@@ -74,7 +74,7 @@ export default function CalendarView({ D, onNav, onOpenDate }: Props) {
         </button>
         <div
           style={{
-            fontFamily: "Syne,sans-serif",
+            fontFamily: "Space Grotesk,sans-serif",
             fontWeight: 800,
             fontSize: "1.35rem",
             background: "linear-gradient(135deg,#00d26a,#ff81f5)",
