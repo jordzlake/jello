@@ -229,12 +229,51 @@ export function useStore() {
       r.onload = (ev) => {
         try {
           const p = JSON.parse(ev.target!.result as string) as GlobalState;
-          if (!p.dashboards || !p.activeDash) throw new Error("bad");
+          // Support old single-dashboard format: { lists, name, ... }
+          // by wrapping it into a GlobalState shape
+          let incoming: GlobalState;
+          if (p.dashboards && p.activeDash) {
+            incoming = p; // new multi-dashboard format
+          } else if ((p as any).lists) {
+            // Old format — single dashboard saved as a Dashboard object directly
+            const dash = p as unknown as Dashboard;
+            const id = uid();
+            incoming = { activeDash: id, dashboards: { [id]: dash } };
+          } else {
+            throw new Error("bad");
+          }
+
           setG_((prev) => {
-            try {
-              localStorage.setItem(KEY, JSON.stringify(p));
-            } catch {}
-            return p;
+            const next = { ...prev, dashboards: { ...prev.dashboards } };
+            let lastAddedId = prev.activeDash;
+
+            for (const [id, dash] of Object.entries(incoming.dashboards)) {
+              const name = (dash as Dashboard).name || "Imported";
+              // Check if a dashboard with this name already exists
+              const existingId = Object.keys(next.dashboards).find(
+                (eid) => next.dashboards[eid].name === name
+              );
+              if (existingId) {
+                // Ask user whether to replace — confirm() is synchronous and works fine here
+                const replace = window.confirm(
+                  `A dashboard named "${name}" already exists.\nReplace it with the imported version?`
+                );
+                if (replace) {
+                  next.dashboards[existingId] = { ...(dash as Dashboard), name };
+                  lastAddedId = existingId;
+                }
+                // If user says no, skip this dashboard
+              } else {
+                // New dashboard — add with a fresh ID to avoid key collisions
+                const newId = uid();
+                next.dashboards[newId] = { ...(dash as Dashboard), name };
+                lastAddedId = newId;
+              }
+            }
+
+            next.activeDash = lastAddedId;
+            try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+            return next;
           });
           resolve();
         } catch {
