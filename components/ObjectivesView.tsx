@@ -205,8 +205,22 @@ export default function ObjectivesView() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Mind Map — scrollable column layout: notDone pills → center card → done list
-// SVG lines connect pills to center card
+// ─────────────────────────────────────────────────────────────────────
+// Pill position storage
+// ─────────────────────────────────────────────────────────────────────
+const PILL_POS_KEY = 'jello_pill_pos';
+type PosMap = Record<string, { x: number; y: number }>;
+
+function loadPillPositions(objId: string): PosMap {
+  if (typeof window === 'undefined') return {};
+  try { return JSON.parse(localStorage.getItem(`${PILL_POS_KEY}_${objId}`) || '{}'); } catch { return {}; }
+}
+function savePillPositions(objId: string, pos: PosMap) {
+  try { localStorage.setItem(`${PILL_POS_KEY}_${objId}`, JSON.stringify(pos)); } catch {}
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Mind Map — center card top, freely-positioned pills below connected by lines
 // ─────────────────────────────────────────────────────────────────────
 function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddComp, onEditObj, onDeleteObj }: {
   obj: Objective;
@@ -218,10 +232,15 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
   const centerRef    = useRef<HTMLDivElement>(null);
   const pillRefs     = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Drag state
+  // Pill free positions (relative to canvas)
+  const [pillPos,   setPillPos]   = useState<PosMap>(() => loadPillPositions(obj.id));
+  // Which pill is being repositioned (free drag)
+  const [movingId,  setMovingId]  = useState<string|null>(null);
+  const moveOffset = useRef({ dx: 0, dy: 0 });
+
+  // Drop-on-center drag state
   const [draggingId,   setDraggingId]   = useState<string|null>(null);
   const [dragPos,      setDragPos]       = useState({ x: 0, y: 0 });
-  const [dragStart,    setDragStart]     = useState({ x: 0, y: 0 });
   const [overCenter,   setOverCenter]    = useState(false);
   const [pulse,        setPulse]         = useState(false);
   const [justDone,     setJustDone]      = useState<string|null>(null);
@@ -233,7 +252,17 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
   const pct     = total === 0 ? 0 : Math.round(done.length / total * 100);
   const stepPct = total === 0 ? 0 : Math.round(100 / total);
 
-  // Recompute SVG lines whenever layout changes
+  // Default positions spread in rows below the center card
+  const getDefaultPos = useCallback((id: string, index: number, total: number, canvasW: number) => {
+    const cols = Math.min(total, Math.floor(canvasW / 160) || 3);
+    const col  = index % cols;
+    const row  = Math.floor(index / cols);
+    const spacing = Math.min(canvasW / (cols + 1), 180);
+    const startX = (canvasW - spacing * (cols - 1)) / 2;
+    return { x: startX + col * spacing - 60, y: 80 + row * 90 };
+  }, []);
+
+  // Recompute SVG lines
   const recomputeLines = useCallback(() => {
     if (!containerRef.current || !centerRef.current) return;
     const cr = containerRef.current.getBoundingClientRect();
@@ -259,23 +288,36 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
     const ro = new ResizeObserver(recomputeLines);
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, [recomputeLines, obj.components.length]);
+  }, [recomputeLines, obj.components.length, pillPos]);
 
-  // Check if dragged item is over center card
   const isOverCenter = useCallback((x: number, y: number) => {
     if (!centerRef.current) return false;
     const r = centerRef.current.getBoundingClientRect();
     return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
   }, []);
 
-  // Global pointer move / up handlers
+  // Combined pointer handlers — handles both free-move and drop-on-center
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (movingId) {
+      // Free repositioning
+      const cr = containerRef.current!.getBoundingClientRect();
+      const pillAreaTop = centerRef.current ? (centerRef.current.getBoundingClientRect().bottom - cr.top + 20) : 200;
+      const nx = e.clientX - cr.left - moveOffset.current.dx;
+      const ny = Math.max(pillAreaTop, e.clientY - cr.top - moveOffset.current.dy);
+      setPillPos(prev => {
+        const next = { ...prev, [movingId]: { x: nx, y: ny } };
+        savePillPositions(obj.id, next);
+        return next;
+      });
+      return;
+    }
     if (!draggingId) return;
     setDragPos({ x: e.clientX, y: e.clientY });
     setOverCenter(isOverCenter(e.clientX, e.clientY));
-  }, [draggingId, isOverCenter]);
+  }, [movingId, draggingId, isOverCenter, obj.id]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (movingId) { setMovingId(null); recomputeLines(); return; }
     if (!draggingId) return;
     if (isOverCenter(e.clientX, e.clientY)) {
       const id = draggingId;
@@ -286,12 +328,23 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
     }
     setDraggingId(null);
     setOverCenter(false);
-  }, [draggingId, isOverCenter, onToggle]);
+  }, [movingId, draggingId, isOverCenter, onToggle, recomputeLines]);
 
-  const startDrag = useCallback((id: string, clientX: number, clientY: number) => {
+  const startDropDrag = useCallback((id: string, clientX: number, clientY: number) => {
     setDraggingId(id);
     setDragPos({ x: clientX, y: clientY });
-    setDragStart({ x: clientX, y: clientY });
+  }, []);
+
+  const startMove = useCallback((id: string, clientX: number, clientY: number) => {
+    const el = pillRefs.current.get(id);
+    if (!el || !containerRef.current) return;
+    const cr = containerRef.current.getBoundingClientRect();
+    const pr = el.getBoundingClientRect();
+    moveOffset.current = {
+      dx: clientX - (pr.left - cr.left),
+      dy: clientY - (pr.top  - cr.top),
+    };
+    setMovingId(id);
   }, []);
 
   return (
@@ -324,44 +377,11 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
         ))}
       </svg>
 
-      {/* Scrollable column */}
-      <div style={{ position:'relative', zIndex:2, display:'flex', flexDirection:'column', alignItems:'center', padding: '20px 16px 40px', gap:0, minHeight:'100%' }}>
-
-        {/* ── Not-done pills ───────────────────────────────── */}
-        <div style={{ width:'100%', maxWidth:600 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <span style={{ fontSize:'.65rem', color:'var(--muted)', textTransform:'uppercase', letterSpacing:1.1, fontFamily:'Syne,sans-serif', fontWeight:700 }}>
-              Components · {notDone.length} pending
-            </span>
-          </div>
-          {notDone.length === 0 ? (
-            <div style={{ fontSize:'.76rem', color:'var(--muted)', fontStyle:'italic', padding:'4px 0 8px' }}>
-              {total === 0 ? 'No components yet.' : '🎉 All done!'}
-            </div>
-          ) : (
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8, paddingBottom:8 }}>
-              {notDone.map(comp => (
-                <PillNode
-                  key={comp.id}
-                  comp={comp}
-                  color={obj.color} color2={obj.color2}
-                  stepPct={stepPct}
-                  isDragging={draggingId === comp.id}
-                  isJustDone={justDone === comp.id}
-                  pillRef={(el) => { if (el) pillRefs.current.set(comp.id, el); else pillRefs.current.delete(comp.id); }}
-                  onStartDrag={startDrag}
-                  onEdit={() => onEditComp(comp.id)}
-                  onDelete={() => onDeleteComp(comp.id)}
-                  onColorChange={(bg) => onUpdateComp(comp.id, { bgColor: bg } as any)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Main layout: center card on top, pills freely positioned below */}
+      <div style={{ position:'relative', zIndex:2, display:'flex', flexDirection:'column', alignItems:'center', padding:'20px 16px 0', minHeight:'100%' }}>
 
         {/* ── Add component + Center card ──────────────────── */}
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, width:'100%', maxWidth:340, marginTop: 20 }}>
-          {/* Add component button sits right above the card */}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, width:'100%', maxWidth:340 }}>
           <button onClick={onAddComp}
             style={{ background:`rgba(${rgb(obj.color)},.16)`, border:`1px dashed rgba(${rgb(obj.color)},.5)`, borderRadius:10, color:obj.color, fontFamily:'DM Sans,sans-serif', fontSize:'.76rem', fontWeight:700, padding:'7px 18px', cursor:'pointer', display:'flex', alignItems:'center', gap:6, transition:'all .2s', width:'100%', justifyContent:'center' }}
             onMouseEnter={e=>e.currentTarget.style.background=`rgba(${rgb(obj.color)},.28)`}
@@ -425,7 +445,7 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
                       comp={comp}
                       color={obj.color}
                       isDragging={draggingId === comp.id}
-                      onStartDrag={(id,x,y) => { startDrag(id,x,y); }}
+                      onStartDrag={(id,x,y) => { startDropDrag(id,x,y); }}
                       onDrop={(x,y) => {
                         if (!isOverCenter(x,y)) onToggle(comp.id);
                         setDraggingId(null); setOverCenter(false);
@@ -440,12 +460,47 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
           </div>
         </div>
 
-        {/* ── Hint ─────────────────────────────────────────── */}
-        {notDone.length > 0 && !draggingId && (
-          <div style={{ marginTop:14, fontSize:'.64rem', color:'var(--muted)', background:'rgba(11,11,19,.65)', padding:'4px 14px', borderRadius:20, backdropFilter:'blur(8px)', textAlign:'center' }}>
-            Drag a pill onto the objective card to complete it · drag back out to undo
+        {/* ── Pills area — freely positioned below center card ── */}
+        {notDone.length > 0 && (
+          <div style={{ position:'relative', width:'100%', minHeight: Math.ceil(notDone.length / 3) * 90 + 40, marginTop:16 }}>
+            {notDone.map((comp, i) => {
+              const cw = containerRef.current?.offsetWidth || 600;
+              const pos = pillPos[comp.id] ?? getDefaultPos(comp.id, i, notDone.length, cw);
+              return (
+                <div
+                  key={comp.id}
+                  ref={el => { if (el) pillRefs.current.set(comp.id, el); else pillRefs.current.delete(comp.id); }}
+                  style={{ position:'absolute', left: pos.x, top: pos.y, zIndex: movingId === comp.id ? 50 : 5, cursor: movingId === comp.id ? 'grabbing' : 'grab', touchAction:'none', userSelect:'none' }}
+                  onPointerDown={e => {
+                    if ((e.target as HTMLElement).closest('[data-nd]')) return;
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    // Short press = reposition, long hold threshold not needed — just start moving
+                    startMove(comp.id, e.clientX, e.clientY);
+                  }}
+                >
+                  <PillNode
+                    comp={comp}
+                    color={obj.color} color2={obj.color2}
+                    stepPct={stepPct}
+                    isDragging={draggingId === comp.id}
+                    isMoving={movingId === comp.id}
+                    isJustDone={justDone === comp.id}
+                    pillRef={() => {}}
+                    onStartDrag={startDropDrag}
+                    onEdit={() => onEditComp(comp.id)}
+                    onDelete={() => onDeleteComp(comp.id)}
+                    onColorChange={(bg) => onUpdateComp(comp.id, { bgColor: bg } as any)}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
+        {notDone.length === 0 && total > 0 && (
+          <div style={{ marginTop:24, fontSize:'.82rem', color:'var(--muted)', textAlign:'center' }}>🎉 All components completed!</div>
+        )}
+        {/* Spacer so content isn't clipped */}
+        <div style={{ height:40 }}/>
       </div>
 
       {/* ── Floating ghost while dragging ────────────────── */}
@@ -482,47 +537,39 @@ function MindMap({ obj, onToggle, onEditComp, onDeleteComp, onUpdateComp, onAddC
 // ─────────────────────────────────────────────────────────────────────
 // Pill node — not-done, draggable with pointer capture
 // ─────────────────────────────────────────────────────────────────────
-function PillNode({ comp, color, color2, stepPct, isDragging, isJustDone, pillRef, onStartDrag, onEdit, onDelete, onColorChange }: {
+function PillNode({ comp, color, color2, stepPct, isDragging, isMoving, isJustDone, pillRef, onStartDrag, onEdit, onDelete, onColorChange }: {
   comp: ObjComponent; color:string; color2:string; stepPct:number;
-  isDragging:boolean; isJustDone:boolean;
+  isDragging:boolean; isMoving:boolean; isJustDone:boolean;
   pillRef:(el:HTMLDivElement|null)=>void;
   onStartDrag:(id:string,x:number,y:number)=>void;
   onEdit:()=>void; onDelete:()=>void; onColorChange:(bg:string)=>void;
 }) {
   const [hov, setHov]           = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
-  const elRef = useRef<HTMLDivElement>(null);
   const bgColor = (comp as any).bgColor || 'rgba(255,255,255,.08)';
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('[data-nd]')) return;
-    e.preventDefault();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    onStartDrag(comp.id, e.clientX, e.clientY);
-  };
 
   return (
     <div
-      ref={(el) => { (elRef as any).current = el; pillRef(el); }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => { setHov(false); setColorOpen(false); }}
-      onPointerDown={handlePointerDown}
       style={{
         position:'relative', display:'inline-flex', alignItems:'center', gap:7,
         padding:'9px 15px', borderRadius:50,
-        border:`1.5px solid ${hov ? `rgba(${rgb(color)},.6)` : 'rgba(255,255,255,.13)'}`,
+        border:`1.5px solid ${isMoving ? color : hov ? `rgba(${rgb(color)},.6)` : 'rgba(255,255,255,.13)'}`,
         background: bgColor,
         backdropFilter:'blur(12px)',
-        cursor:'grab',
+        cursor: isMoving ? 'grabbing' : 'grab',
         userSelect:'none',
         touchAction:'none',
         opacity: isDragging ? 0.25 : 1,
-        boxShadow: isJustDone
-          ? `0 0 0 8px rgba(${rgb(color)},.35)`
+        boxShadow: isMoving
+          ? `0 8px 32px rgba(${rgb(color)},.5), 0 0 0 2px ${color}`
+          : isJustDone ? `0 0 0 8px rgba(${rgb(color)},.35)`
           : hov ? `0 4px 18px rgba(${rgb(color)},.25)` : 'none',
-        transform: isJustDone ? 'scale(1.08)' : 'scale(1)',
-        transition: isDragging ? 'opacity .15s' : 'all .22s cubic-bezier(.34,1.56,.64,1)',
+        transform: isMoving ? 'scale(1.07) rotate(-1deg)' : isJustDone ? 'scale(1.08)' : 'scale(1)',
+        transition: isMoving ? 'none' : 'all .22s cubic-bezier(.34,1.56,.64,1)',
         maxWidth: 220,
+        whiteSpace:'nowrap',
       }}
     >
       {/* Color dot */}
