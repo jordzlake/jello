@@ -71,10 +71,6 @@ body.touch-dragging { user-select: none; -webkit-user-select: none; }
   .obj-topbar    { display: flex !important; }
   .obj-overlay   { display: block; }
 
-  /* Board: stack lists vertically */
-  .board-scroll  { flex-direction: column !important; align-items: stretch !important; }
-  .board-list    { width: 100% !important; min-width: 0 !important; max-width: 100% !important; flex-shrink: 0; }
-
   /* General spacing */
   .main-content  { padding: 12px !important; }
 }
