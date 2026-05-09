@@ -1,4 +1,25 @@
 'use client';
+
+// Parses URLs in text and returns an array of strings and anchor elements
+function linkify(text: string): React.ReactNode[] {
+  const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)])/g;
+  const parts: React.ReactNode[] = [];
+  let last = 0, match: RegExpExecArray | null;
+  while ((match = URL_RE.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const url = match[1];
+    parts.push(
+      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
+        onClick={e => e.stopPropagation()}
+        style={{ color:'var(--accent)', textDecoration:'underline', wordBreak:'break-all' }}>
+        {url}
+      </a>
+    );
+    last = match.index + url.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
 import { useRef } from 'react';
 import { Task, Palette } from '@/lib/types';
 import { fmtDate } from '@/lib/utils';
@@ -158,7 +179,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
           color:t.done?'var(--done-txt)':'var(--text)',
           textDecoration:t.done?'line-through':'none',
         }}>
-          {t.text}
+          {linkify(t.text)}
         </div>
       </div>
 

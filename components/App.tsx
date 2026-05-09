@@ -80,6 +80,7 @@ export default function App() {
     }
   }, [D?.bgUrl, hydrated]);
 
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

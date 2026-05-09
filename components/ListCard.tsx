@@ -170,6 +170,10 @@ export default function ListCard({
               objectPosition: "center",
               display: "block",
             }}
+            onError={e => {
+              // Dead/expired link — hide img so gradient fallback shows
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
           />
         )}
         <div

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { cacheImage } from "@/lib/imageCache";
 import Modal, { MLabel, MFooter, BtnPrimary } from "./Modal";
 import { JList, Palette } from "@/lib/types";
 import { PAL } from "@/lib/utils";
@@ -32,6 +31,7 @@ export default function ListStyleModal({
   const [imgs, setImgs] = useState<UImg[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedImgId, setSelectedImgId] = useState<string|null>(null);
   const [allPals, setAllPals] = useState<Palette[]>(PAL);
   const [c1, setC1] = useState("#6f5fff");
   const [c2, setC2] = useState("#ff5fa0");
@@ -297,11 +297,7 @@ export default function ListStyleModal({
           }}
         >
           {imgs.map((img) => (
-            <ImgCell
-              key={img.id}
-              thumb={img.thumb}
-              onClick={async () => { const b64 = await cacheImage(img.full); onUpdate({ bannerUrl: b64 }); }}
-            />
+            <ImgCell key={img.id} thumb={img.thumb} selected={selectedImgId===img.id} onClick={() => { setSelectedImgId(img.id); onUpdate({ bannerUrl: img.full }); }} />
           ))}
           {imgs.length === 0 && !loading && !error && (
             <div
