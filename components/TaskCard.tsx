@@ -10,8 +10,11 @@ function linkify(text: string): React.ReactNode[] {
     const url = match[1];
     parts.push(
       <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
-        onClick={e => e.stopPropagation()}
-        style={{ color:'var(--accent)', textDecoration:'underline', wordBreak:'break-all' }}>
+        onClick={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+        onMouseDown={e => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
+        onTouchStart={e => e.stopPropagation()}
+        style={{ color:'var(--accent)', textDecoration:'underline', wordBreak:'break-all', pointerEvents:'all', cursor:'pointer', position:'relative', zIndex:10 }}>
         {url}
       </a>
     );
@@ -157,7 +160,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
         display:'flex', flexDirection:'column', gap:7,
         cursor:'grab', transition:'all .2s',
         animation:'taskIn .28s cubic-bezier(.34,1.56,.64,1)',
-        touchAction:'none', // prevents browser scroll hijack during drag
+        touchAction:'pan-y', // allow vertical scroll; drag handled by touch handlers
       }}
       onMouseEnter={e=>{if(!t.done){const el=e.currentTarget;el.style.background='var(--surface2)';el.style.borderColor='rgba(111,95,255,.3)';el.style.transform='translateY(-1px)';el.style.boxShadow='0 4px 16px rgba(0,0,0,.28)';}}}
       onMouseLeave={e=>{const el=e.currentTarget;el.style.background=t.done?'var(--done-bg)':'var(--surface)';el.style.borderColor=t.done?'rgba(255,255,255,.04)':'var(--border)';el.style.transform='';el.style.boxShadow='';}}

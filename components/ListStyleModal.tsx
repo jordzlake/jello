@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { cacheImage } from "@/lib/imageCache";
 import Modal, { MLabel, MFooter, BtnPrimary } from "./Modal";
 import { JList, Palette } from "@/lib/types";
 import { PAL } from "@/lib/utils";
@@ -12,7 +13,7 @@ interface Props {
 }
 
 const PER_PAGE = 9;
-const API_KEY = process.env.NEXT_PUBLIC_UNSPLASH_KEY || "";
+const API_KEY = process.env.NEXT_PUBLIC_UNSPLASH_KEY || '';
 
 interface UImg {
   id: string;
@@ -31,7 +32,8 @@ export default function ListStyleModal({
   const [imgs, setImgs] = useState<UImg[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedImgId, setSelectedImgId] = useState<string | null>(null);
+  const [selectedImgId, setSelectedImgId] = useState<string|null>(null);
+  const [cachingId, setCachingId] = useState<string|null>(null);
   const [allPals, setAllPals] = useState<Palette[]>(PAL);
   const [c1, setC1] = useState("#6f5fff");
   const [c2, setC2] = useState("#ff5fa0");
@@ -54,19 +56,13 @@ export default function ListStyleModal({
     try {
       const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&page=${pg}&per_page=${PER_PAGE}&orientation=landscape&client_id=${API_KEY}`;
       const res = await fetch(url);
-      if (!res.ok) {
-        setError(`Unsplash error ${res.status}`);
-        setLoading(false);
-        return;
-      }
+      if (!res.ok) { setError(`Unsplash error ${res.status}`); setLoading(false); return; }
       const data = await res.json();
-      setImgs(
-        (data.results || []).map((p: any) => ({
-          id: p.id,
-          thumb: p.urls.small,
-          full: p.urls.regular,
-        })),
-      );
+      setImgs((data.results || []).map((p: any) => ({
+        id:    p.id,
+        thumb: p.urls.small,
+        full:  p.urls.regular,
+      })));
     } catch {
       setError("Network error — try again.");
     }
@@ -303,15 +299,7 @@ export default function ListStyleModal({
           }}
         >
           {imgs.map((img) => (
-            <ImgCell
-              key={img.id}
-              thumb={img.thumb}
-              selected={selectedImgId === img.id}
-              onClick={() => {
-                setSelectedImgId(img.id);
-                onUpdate({ bannerUrl: img.full });
-              }}
-            />
+            <ImgCell key={img.id} thumb={img.thumb} selected={selectedImgId===img.id} caching={cachingId===img.id} onClick={async () => { setSelectedImgId(img.id); setCachingId(img.id); const b64 = await cacheImage(img.full); setCachingId(null); onUpdate({ bannerUrl: b64 }); }} />
           ))}
           {imgs.length === 0 && !loading && !error && (
             <div
@@ -354,15 +342,7 @@ export default function ListStyleModal({
   );
 }
 
-function ImgCell({
-  thumb,
-  selected,
-  onClick,
-}: {
-  thumb: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
+function ImgCell({ thumb, selected, caching, onClick }: { thumb: string; selected: boolean; caching: boolean; onClick: () => void }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <div

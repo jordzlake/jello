@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { cacheImage } from '@/lib/imageCache';
 import Modal, { MFooter, BtnGhost, BtnPrimary } from './Modal';
 
 interface Props { open:boolean; onClose:()=>void; onSelect:(url:string)=>void; onClear:()=>void; }
@@ -15,6 +16,7 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [selectedId, setSelectedId] = useState<string|null>(null);
+  const [cachingId, setCachingId] = useState<string|null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => { if (open) { setPage(1); fetchImgs(search, 1); } }, [open]);
@@ -38,9 +40,12 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
 
   const goTo = (pg:number) => { setPage(pg); fetchImgs(search||'nature', pg); };
 
-  const handleSelect = (img: UImg) => {
+  const handleSelect = async (img: UImg) => {
     setSelectedId(img.id);
-    onSelect(img.full); // save raw stable Unsplash URL — caching done in imageCache layer
+    setCachingId(img.id);
+    const b64 = await cacheImage(img.full);
+    setCachingId(null);
+    onSelect(b64);
   };
 
   return (
@@ -59,7 +64,7 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
       ) : (
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:5,marginBottom:8}}>
           {imgs.map(img => (
-            <ImgCell key={img.id} thumb={img.thumb} selected={selectedId===img.id} onSelect={() => handleSelect(img)} />
+            <ImgCell key={img.id} thumb={img.thumb} selected={selectedId===img.id} caching={cachingId===img.id} onSelect={() => handleSelect(img)} />
           ))}
           {imgs.length===0 && !loading && !error && (
             <div style={{gridColumn:'1/-1',textAlign:'center',color:'var(--muted)',fontSize:'.78rem',padding:'40px 0'}}>No results for "{search}"</div>
@@ -76,7 +81,7 @@ export default function BgModal({ open, onClose, onSelect, onClear }: Props) {
   );
 }
 
-function ImgCell({ thumb, selected, onSelect }: { thumb:string; selected:boolean; onSelect:()=>void }) {
+function ImgCell({ thumb, selected, caching, onSelect }: { thumb:string; selected:boolean; caching:boolean; onSelect:()=>void }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <div onClick={onSelect}
@@ -90,7 +95,12 @@ function ImgCell({ thumb, selected, onSelect }: { thumb:string; selected:boolean
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={thumb} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:loaded?1:0,transition:'opacity .35s'}}
         onLoad={()=>setLoaded(true)} onError={e=>e.currentTarget.style.opacity='0'} />
-      {selected && (
+      {caching && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <i className="fa-solid fa-spinner" style={{animation:'spin .8s linear infinite',color:'#fff',fontSize:'.8rem'}}/>
+        </div>
+      )}
+      {selected && !caching && (
         <div style={{position:'absolute',top:5,right:5,width:20,height:20,borderRadius:'50%',background:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 2px 8px rgba(0,0,0,.4)'}}>
           <i className="fa-solid fa-check" style={{fontSize:'.55rem',color:'#fff'}}/>
         </div>
