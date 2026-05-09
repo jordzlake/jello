@@ -354,7 +354,15 @@ export default function ListStyleModal({
   );
 }
 
-function ImgCell({ thumb, onClick }: { thumb: string; onClick: () => void }) {
+function ImgCell({
+  thumb,
+  selected,
+  onClick,
+}: {
+  thumb: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
   const [loaded, setLoaded] = useState(false);
   return (
     <div
