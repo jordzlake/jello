@@ -1,6 +1,22 @@
 'use client';
 
-// Parses URLs in text and returns an array of strings and anchor elements
+// Returns a short display label from a URL — domain only
+function urlLabel(url: string): string {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '');
+    return h.length > 30 ? h.slice(0, 28) + '…' : h;
+  } catch { return url.slice(0, 30); }
+}
+
+// Returns favicon URL for a given page URL using Google's favicon service
+function faviconUrl(url: string): string {
+  try {
+    const origin = new URL(url).origin;
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(origin)}&sz=16`;
+  } catch { return ''; }
+}
+
+// Parses URLs in text and renders them as styled hyperlinks with favicon + domain label
 function linkify(text: string): React.ReactNode[] {
   const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)])/g;
   const parts: React.ReactNode[] = [];
@@ -8,14 +24,37 @@ function linkify(text: string): React.ReactNode[] {
   while ((match = URL_RE.exec(text)) !== null) {
     if (match.index > last) parts.push(text.slice(last, match.index));
     const url = match[1];
+    const fav = faviconUrl(url);
+    const label = urlLabel(url);
     parts.push(
       <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
         onClick={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
         onMouseDown={e => e.stopPropagation()}
         onPointerDown={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
-        style={{ color:'var(--accent)', textDecoration:'underline', wordBreak:'break-all', pointerEvents:'all', cursor:'pointer', position:'relative', zIndex:10 }}>
-        {url}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          color: 'var(--accent)', textDecoration: 'none',
+          background: 'rgba(111,95,255,.12)', border: '1px solid rgba(111,95,255,.3)',
+          borderRadius: 5, padding: '1px 6px 1px 4px',
+          fontSize: '.78em', fontWeight: 500,
+          pointerEvents: 'all', cursor: 'pointer', position: 'relative', zIndex: 10,
+          verticalAlign: 'middle', maxWidth: '100%',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(111,95,255,.22)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(111,95,255,.12)'; }}
+      >
+        {fav && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={fav} alt="" width={12} height={12}
+            style={{ width: 12, height: 12, borderRadius: 2, flexShrink: 0 }}
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
+          {label}
+        </span>
+        <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '.55em', opacity: .6, flexShrink: 0 }}/>
       </a>
     );
     last = match.index + url.length;
