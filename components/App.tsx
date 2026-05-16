@@ -6,6 +6,7 @@ import { PAL, uid } from "@/lib/utils";
 
 import Header, { ViewType } from "./Header";
 import BoardView from "./BoardView";
+import ProgressTray from "./ProgressTray";
 import CalendarView from "./CalendarView";
 import GanttView from "./GanttView";
 import ObjectivesView from "./ObjectivesView";
@@ -79,7 +80,6 @@ export default function App() {
       layer.style.opacity = url ? "1" : "0";
     }
   }, [D?.bgUrl, hydrated]);
-
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -490,6 +490,9 @@ export default function App() {
           </BtnPrimary>
         </MFooter>
       </Modal>
+
+      {/* Progress Tray — only shown on board view */}
+      {view === "board" && D && <ProgressTray lists={D.lists} />}
 
       {/* New List Modal */}
       <Modal
