@@ -299,7 +299,7 @@ export default function ListStyleModal({
           }}
         >
           {imgs.map((img) => (
-            <ImgCell key={img.id} thumb={img.thumb} selected={selectedImgId===img.id} caching={cachingId===img.id} onClick={async () => { setSelectedImgId(img.id); setCachingId(img.id); const b64 = await cacheImage(img.full); setCachingId(null); onUpdate({ bannerUrl: b64 }); }} />
+            <ImgCell key={img.id} thumb={img.thumb} selected={selectedImgId===img.id} caching={cachingId===img.id} onClick={async () => { setSelectedImgId(img.id); setCachingId(img.id); const b64 = await cacheImage(img.full); setCachingId(null); onUpdate({ bannerUrl: b64 }); onClose(); }} />
           ))}
           {imgs.length === 0 && !loading && !error && (
             <div
@@ -342,27 +342,28 @@ export default function ListStyleModal({
   );
 }
 
-function ImgCell({ thumb, selected, caching, onClick }: { thumb: string; selected: boolean; caching: boolean; onClick: () => void }) {
+function ImgCell({ thumb, selected, caching, onClick }: { thumb: string; selected: boolean; caching: boolean; onClick: () => Promise<void> }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <div
-      onClick={onClick}
+      onClick={caching ? undefined : onClick}
       style={{
         aspectRatio: "16/9",
         borderRadius: 7,
         overflow: "hidden",
         background: "var(--surface2)",
-        cursor: "pointer",
+        cursor: caching ? "wait" : "pointer",
         position: "relative",
-        border: "2px solid transparent",
+        border: `2px solid ${selected ? 'var(--accent)' : 'transparent'}`,
+        boxShadow: selected ? '0 0 0 3px rgba(111,95,255,.4)' : 'none',
         transition: "all .18s",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--accent)";
-        e.currentTarget.style.transform = "scale(1.04)";
+        if (!selected && !caching) e.currentTarget.style.borderColor = "rgba(111,95,255,.5)";
+        if (!caching) e.currentTarget.style.transform = "scale(1.04)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "transparent";
+        if (!selected) e.currentTarget.style.borderColor = "transparent";
         e.currentTarget.style.transform = "";
       }}
     >
