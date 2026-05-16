@@ -134,7 +134,7 @@ export function useStore() {
     const done = !t.done;
     updateTask(li, ti, {
       done,
-      progress: done && t.progress < 100 ? 100 : t.progress,
+      progress: done ? 100 : 0,
     });
   };
   const moveTask = (
