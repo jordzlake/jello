@@ -159,7 +159,8 @@ export default function ListCard({
         {list.bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={list.bannerUrl ?? ""}
+            key={list.bannerUrl}
+            src={list.bannerUrl}
             alt=""
             style={{
               position: "absolute",
@@ -169,6 +170,9 @@ export default function ListCard({
               objectFit: "cover",
               objectPosition: "center",
               display: "block",
+            }}
+            onLoad={e => {
+              (e.currentTarget as HTMLImageElement).style.display = "block";
             }}
             onError={e => {
               // Dead/expired link — hide img so gradient fallback shows
