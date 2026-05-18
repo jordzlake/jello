@@ -67,6 +67,8 @@ export default function ListCard({
       if (b64.startsWith('data:')) {
         setBannerSrc(b64);
         onUpdateBanner(b64);
+      } else {
+        console.error('[ListCard] cacheImage still returned raw URL:', list.bannerUrl);
       }
     });
   }, [list.bannerUrl]);
