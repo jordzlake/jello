@@ -18,7 +18,7 @@ function faviconUrl(url: string): string {
 }
 
 // Parses URLs in text and renders them as styled hyperlinks with favicon + domain label
-function linkify(text: string): React.ReactNode[] {
+function linkify(text: string, palette: { c1: string; c2: string }): React.ReactNode[] {
   const URL_RE = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)])/g;
   const parts: React.ReactNode[] = [];
   let last = 0, match: RegExpExecArray | null;
@@ -35,15 +35,15 @@ function linkify(text: string): React.ReactNode[] {
         onTouchStart={e => e.stopPropagation()}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 4,
-          color: 'var(--accent)', textDecoration: 'none',
-          background: 'rgba(111,95,255,.12)', border: '1px solid rgba(111,95,255,.3)',
+          color: palette.c1, textDecoration: 'none',
+          background: `${palette.c1}1a`, border: `1px solid ${palette.c1}55`,
           borderRadius: 5, padding: '1px 6px 1px 4px',
           fontSize: '.78em', fontWeight: 500,
           pointerEvents: 'all', cursor: 'pointer', position: 'relative', zIndex: 10,
           verticalAlign: 'middle', maxWidth: '100%',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(111,95,255,.22)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(111,95,255,.12)'; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${palette.c1}33`; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${palette.c1}1a`; }}
       >
         {fav && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -138,7 +138,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
       case 'today':   return {...base,background:'rgba(255,200,80,.12)',color:'#ffc850',borderColor:'rgba(255,200,80,.2)'};
       case 'time':    return {...base,background:'rgba(0,210,106,.1)',color:'#00d26a',borderColor:'rgba(0,210,106,.2)'};
       case 'dur':     return {...base,background:'rgba(79,172,254,.1)',color:'#4facfe',borderColor:'rgba(79,172,254,.2)'};
-      default:        return {...base,background:'rgba(111,95,255,.12)',color:'#a090ff',borderColor:'rgba(111,95,255,.2)'};
+      default:        return {...base,background:`${palette.c1}1a`,color:palette.c1,borderColor:`${palette.c1}33`};
     }
   };
 
@@ -232,14 +232,14 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
         animation:'taskIn .28s cubic-bezier(.34,1.56,.64,1)',
         touchAction:'pan-y', // allow vertical scroll; drag handled by touch handlers
       }}
-      onMouseEnter={e=>{if(!t.done){const el=e.currentTarget;el.style.background='var(--surface2)';el.style.borderColor='rgba(111,95,255,.3)';el.style.transform='translateY(-1px)';el.style.boxShadow='0 4px 16px rgba(0,0,0,.28)';}}}
+      onMouseEnter={e=>{if(!t.done){const el=e.currentTarget;el.style.background='var(--surface2)';el.style.borderColor=`${palette.c1}66`;el.style.transform='translateY(-1px)';el.style.boxShadow=`0 4px 20px ${palette.c1}22`;}}}
       onMouseLeave={e=>{const el=e.currentTarget;el.style.background=t.done?'var(--done-bg)':'var(--surface)';el.style.borderColor=t.done?'rgba(255,255,255,.04)':'var(--border)';el.style.transform='';el.style.boxShadow='';}}
     >
       {/* Top row */}
       <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
         <div onClick={handleToggle} style={{
           width:17,height:17,borderRadius:5,flexShrink:0,
-          border: t.done?'none':'2px solid var(--border)',
+          border: t.done?'none':`2px solid ${palette.c1}55`,
           background:t.done?`linear-gradient(135deg,${palette.c1},${palette.c2})`:'transparent',
           cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
           transition:'all .22s',marginTop:1,
@@ -252,7 +252,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
           color:t.done?'var(--done-txt)':'var(--text)',
           textDecoration:t.done?'line-through':'none',
         }}>
-          {linkify(t.text)}
+          {linkify(t.text, palette)}
         </div>
       </div>
 
@@ -270,7 +270,7 @@ export default function TaskCard({ task: t, li, ti, palette, onToggle, onContext
       {(prog>0||t.startDate) ? (
         <div style={{marginLeft:25}}>
           <div style={{height:5,background:'rgba(255,255,255,.08)',borderRadius:3,overflow:'hidden',marginTop:2}}>
-            <div style={{height:'100%',borderRadius:3,background:'linear-gradient(90deg,#6f5fff,#ff5fa0)',transition:'width .4s',width:`${prog}%`}} />
+            <div style={{height:'100%',borderRadius:3,background:`linear-gradient(90deg,${palette.c1},${palette.c2})`,transition:'width .4s',width:`${prog}%`,boxShadow:`0 0 6px ${palette.c1}88`}} />
           </div>
           <div style={{fontSize:'.6rem',color:'var(--muted)',display:'flex',justifyContent:'space-between',marginTop:2}}>
             <span>Progress</span><span>{prog}%</span>

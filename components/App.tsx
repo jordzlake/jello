@@ -38,7 +38,10 @@ export default function App() {
 
   const [bgModalOpen, setBgModalOpen] = useState(false);
   // Floating +% feedback popups
-  const [xpPops, setXpPops] = useState<{id:string;pct:number;c1:string;c2:string}[]>([]);
+  // XP popup queue — show one at a time, advance on animation end
+  const [xpQueue, setXpQueue] = useState<{id:string;pct:number;c1:string;c2:string}[]>([]);
+  const [xpCurrent, setXpCurrent] = useState<{id:string;pct:number;c1:string;c2:string}|null>(null);
+  const xpShowingRef = useRef(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   // Date modal (from ctx / gantt / calendar click)
@@ -82,6 +85,15 @@ export default function App() {
       layer.style.opacity = url ? "1" : "0";
     }
   }, [D?.bgUrl, hydrated]);
+
+  // Advance XP popup queue — show next item when current finishes
+  useEffect(() => {
+    if (xpCurrent || xpQueue.length === 0) return;
+    const [next, ...rest] = xpQueue;
+    setXpQueue(rest);
+    setXpCurrent(next);
+  }, [xpQueue, xpCurrent]);
+
 
 
   useEffect(() => {
@@ -197,8 +209,7 @@ export default function App() {
       const gain = pctAfter - pctBefore;
       if (gain > 0) {
         const id = `xp_${Date.now()}_${li}_${ti}`;
-        setXpPops(prev => [...prev, { id, pct: gain, c1: list.palette.c1, c2: list.palette.c2 }]);
-        setTimeout(() => setXpPops(prev => prev.filter(p => p.id !== id)), 1400);
+        setXpQueue(prev => [...prev, { id, pct: gain, c1: list.palette.c1, c2: list.palette.c2 }]);
       }
     }
   };
@@ -511,21 +522,24 @@ export default function App() {
       {/* Progress Tray — only shown on board view */}
       {view === "board" && D && <ProgressTray lists={D.lists} />}
 
-      {/* Gamified +% floating popups — style tag injection guarantees gradient renders */}
-      {xpPops.map((p, idx) => {
+      {/* Gamified +% floating popup — one at a time queue */}
+      {xpCurrent && (() => {
+        const p = xpCurrent;
         const cls = `xp_${p.id.replace(/[^a-z0-9]/gi,'_')}`;
         return (
-          <div key={p.id} style={{
-            position: 'fixed',
-            right: 52,
-            bottom: `calc(48% + ${idx * 54}px)`,
-            zIndex: 9999,
-            pointerEvents: 'none',
-            animation: 'xpFloat 1.5s ease-in-out forwards',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            lineHeight: 1,
-          }}>
+          <div key={p.id}
+            onAnimationEnd={() => setXpCurrent(null)}
+            style={{
+              position: 'fixed',
+              right: 52,
+              bottom: '48%',
+              zIndex: 9999,
+              pointerEvents: 'none',
+              animation: 'xpFloat 2.2s ease-in-out forwards',
+              whiteSpace: 'nowrap',
+              userSelect: 'none',
+              lineHeight: 1,
+            }}>
             <style>{`
               .${cls} {
                 font-family: 'Space Grotesk', sans-serif;
@@ -544,7 +558,7 @@ export default function App() {
             <span className={cls}>+{p.pct}%</span>
           </div>
         );
-      })}
+      })()}
 
       {/* New List Modal */}
       <Modal

@@ -130,8 +130,9 @@ export default function ListCard({
       style={{
         flexShrink: 0,
         width: 290,
-        background: "rgba(11,11,19,.72)",
-        border: "1px solid var(--border)",
+        background: `rgba(11,11,19,.72)`,
+        backgroundImage: `radial-gradient(ellipse at top left, ${palette.c1}26 0%, transparent 65%)`,
+        border: `1px solid ${palette.c1}33`,
         borderRadius: "var(--radius)",
         backdropFilter: "blur(18px)",
         display: "flex",
