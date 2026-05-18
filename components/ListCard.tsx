@@ -157,7 +157,7 @@ export default function ListCard({
         }}
       >
         {/* Banner image — object-fit:cover is always applied immediately */}
-        {list.bannerUrl && (
+        {list.bannerUrl && list.bannerUrl.startsWith("data:") && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={list.bannerUrl}

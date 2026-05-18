@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { cacheImage } from "@/lib/imageCache";
 import { useStore } from "@/lib/store";
 import { Task, Palette } from "@/lib/types";
 import { PAL, uid } from "@/lib/utils";
@@ -85,6 +86,32 @@ export default function App() {
       layer.style.opacity = url ? "1" : "0";
     }
   }, [D?.bgUrl, hydrated]);
+
+  // One-time migration: convert any raw URL bannerUrls/bgUrls to base64 on load
+  useEffect(() => {
+    if (!hydrated || !G) return;
+    (async () => {
+      for (const [, dash] of Object.entries(G.dashboards)) {
+        const d = dash as any;
+        // Migrate bgUrl
+        if (d.bgUrl && !d.bgUrl.startsWith('data:')) {
+          const b64 = await cacheImage(d.bgUrl);
+          if (b64.startsWith('data:')) store.setBg(b64);
+        }
+        // Migrate every list's bannerUrl
+        if (Array.isArray(d.lists)) {
+          for (let li = 0; li < d.lists.length; li++) {
+            const list = d.lists[li];
+            if (list.bannerUrl && !list.bannerUrl.startsWith('data:')) {
+              const b64 = await cacheImage(list.bannerUrl);
+              if (b64.startsWith('data:')) store.updateList(li, { bannerUrl: b64 });
+            }
+          }
+        }
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   // Advance XP popup queue — show next item when current finishes
   useEffect(() => {
