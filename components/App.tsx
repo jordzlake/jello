@@ -498,23 +498,27 @@ export default function App() {
       {view === "board" && D && <ProgressTray lists={D.lists} />}
 
       {/* Gamified +% floating popups */}
-      {xpPops.map(p => (
+      {xpPops.map((p, idx) => (
         <div key={p.id} style={{
           position: 'fixed',
-          right: 36,
-          bottom: '48%',
+          right: 44,
+          bottom: `calc(44% + ${idx * 44}px)`,
           zIndex: 9999,
           pointerEvents: 'none',
-          animation: 'xpFloat 1.4s cubic-bezier(.2,.8,.4,1) forwards',
+          animation: 'xpFloat 1.3s cubic-bezier(.2,.8,.4,1) forwards',
           fontFamily: 'Space Grotesk, sans-serif',
           fontWeight: 900,
-          fontSize: 'clamp(1rem,4vw,1.5rem)',
+          fontSize: 'clamp(1.1rem,5vw,1.8rem)',
           background: `linear-gradient(135deg,${p.c1},${p.c2})`,
           WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          filter: `drop-shadow(0 0 8px ${p.c1}cc)`,
+          color: 'transparent',
+          filter: `drop-shadow(0 0 10px ${p.c1})`,
           whiteSpace: 'nowrap',
           userSelect: 'none',
+          letterSpacing: '-0.5px',
+          lineHeight: 1,
         }}>
           +{p.pct}%
         </div>
