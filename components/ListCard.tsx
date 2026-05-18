@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { getCached } from "@/lib/imageCache";
+import { cacheImage, getCached } from "@/lib/imageCache";
 import { JList, Task, Palette } from "@/lib/types";
 import TaskCard from "./TaskCard";
 
@@ -47,6 +47,24 @@ export default function ListCard({
   const [titleVal, setTitleVal] = useState(list.title);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [bannerSrc, setBannerSrc] = useState<string|null>(() => {
+    if (!list.bannerUrl) return null;
+    if (list.bannerUrl.startsWith('data:')) return list.bannerUrl;
+    return getCached(list.bannerUrl) ?? null;
+  });
+
+  // Resolve banner URL to base64 whenever it changes
+  useEffect(() => {
+    if (!list.bannerUrl) { setBannerSrc(null); return; }
+    if (list.bannerUrl.startsWith('data:')) { setBannerSrc(list.bannerUrl); return; }
+    // Check cache synchronously first
+    const cached = getCached(list.bannerUrl);
+    if (cached) { setBannerSrc(cached); return; }
+    // Fetch asynchronously via canvas/proxy
+    cacheImage(list.bannerUrl).then(b64 => {
+      if (b64.startsWith('data:')) setBannerSrc(b64);
+    });
+  }, [list.bannerUrl]);
   const inputRef = useRef<HTMLInputElement>(null);
   const tasksRef = useRef<HTMLDivElement>(null);
 
@@ -157,12 +175,12 @@ export default function ListCard({
           cursor: "pointer",
         }}
       >
-        {/* Banner image — object-fit:cover is always applied immediately */}
-        {(() => { const src = list.bannerUrl ? (list.bannerUrl.startsWith("data:") ? list.bannerUrl : getCached(list.bannerUrl)) : null; return src ? (
+        {/* Banner image — resolved to base64 via bannerSrc state */}
+        {bannerSrc && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={src}
-            src={src}
+            key={bannerSrc}
+            src={bannerSrc}
             alt=""
             style={{
               position: "absolute",
@@ -173,15 +191,9 @@ export default function ListCard({
               objectPosition: "center",
               display: "block",
             }}
-            onLoad={e => {
-              (e.currentTarget as HTMLImageElement).style.display = "block";
-            }}
-            onError={e => {
-              // Dead/expired link — hide img so gradient fallback shows
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
+            onError={() => setBannerSrc(null)}
           />
-        ) : null; })()}
+        )}
         <div
           style={{
             position: "absolute",
