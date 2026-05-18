@@ -38,6 +38,19 @@ export function useStore() {
       }
     } catch {}
     setHydrated(true);
+
+    // Debug: watch for any writes to the store key
+    const orig = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(k: string, v: string) {
+      if (k === KEY) {
+        try {
+          const parsed = JSON.parse(v);
+          console.trace('[localStorage.setItem] archivedDashboards:', Object.keys(parsed.archivedDashboards ?? {}));
+        } catch {}
+      }
+      orig(k, v);
+    };
+    return () => { localStorage.setItem = orig; };
   }, []);
 
   const setG = useCallback((updater: (prev: GlobalState) => GlobalState) => {
