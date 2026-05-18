@@ -89,7 +89,13 @@ export function useStore() {
       }
       const active = g.activeDash === id ? Object.keys(dbs)[0] : g.activeDash;
       const next = { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
-      console.log('[archiveDash] saving archivedDashboards keys:', Object.keys(next.archivedDashboards ?? {}));
+      // Immediately verify it was written
+      setTimeout(() => {
+        try {
+          const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+          console.log('[archiveDash] verified saved archivedDashboards:', Object.keys(saved.archivedDashboards ?? {}));
+        } catch {}
+      }, 100);
       return next;
     });
 
