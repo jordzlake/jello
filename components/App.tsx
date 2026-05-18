@@ -406,6 +406,7 @@ export default function App() {
                 showToast("Done tasks archived");
               }}
               onUpdateTitle={(li, title) => store.updateList(li, { title })}
+              onUpdateBanner={(li, b64) => store.updateList(li, { bannerUrl: b64 })}
               onContextMenu={showCtx}
               onAddList={() => {
                 setNewListName("");

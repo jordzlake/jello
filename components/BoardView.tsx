@@ -19,6 +19,7 @@ interface Props {
   onArchiveList: (li: number) => void;
   onArchiveDone: (li: number) => void;
   onUpdateTitle: (li: number, title: string) => void;
+  onUpdateBanner: (li: number, b64: string) => void;
   onContextMenu: (e: React.MouseEvent, li: number, ti: number) => void;
   onAddList: () => void;
 }
@@ -33,6 +34,7 @@ export default function BoardView({
   onArchiveList,
   onArchiveDone,
   onUpdateTitle,
+  onUpdateBanner,
   onContextMenu,
   onAddList,
 }: Props) {
@@ -66,6 +68,7 @@ export default function BoardView({
           onArchiveList={() => onArchiveList(li)}
           onArchiveDone={() => onArchiveDone(li)}
           onUpdateTitle={(title) => onUpdateTitle(li, title)}
+          onUpdateBanner={(b64) => onUpdateBanner(li, b64)}
           onContextMenu={(e, ti) => onContextMenu(e, li, ti)}
           isListDragging={draggingLi !== null && draggingLi !== li}
           onListDragStart={() => setDraggingLi(li)}

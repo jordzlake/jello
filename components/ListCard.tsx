@@ -16,6 +16,7 @@ interface Props {
   onArchiveList: () => void;
   onArchiveDone: () => void;
   onUpdateTitle: (title: string) => void;
+  onUpdateBanner: (b64: string) => void;
   onContextMenu: (e: React.MouseEvent, ti: number) => void;
   isListDragging: boolean;
   onListDragStart: () => void;
@@ -37,6 +38,7 @@ export default function ListCard({
   onArchiveList,
   onArchiveDone,
   onUpdateTitle,
+  onUpdateBanner,
   onContextMenu,
   isListDragging,
   onListDragStart,
@@ -62,7 +64,10 @@ export default function ListCard({
     if (cached) { setBannerSrc(cached); return; }
     // Fetch asynchronously via canvas/proxy
     cacheImage(list.bannerUrl).then(b64 => {
-      if (b64.startsWith('data:')) setBannerSrc(b64);
+      if (b64.startsWith('data:')) {
+        setBannerSrc(b64);
+        onUpdateBanner(b64);
+      }
     });
   }, [list.bannerUrl]);
   const inputRef = useRef<HTMLInputElement>(null);
