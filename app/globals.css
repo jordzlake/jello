@@ -74,3 +74,24 @@ body.touch-dragging { user-select: none; -webkit-user-select: none; }
   /* General spacing */
   .main-content  { padding: 12px !important; }
 }
+
+/* ── Gamification animations ───────────────────────────────────────── */
+
+/* Floating +% XP popup — drifts right toward progress tray, fades out */
+@keyframes xpFloat {
+  0%   { opacity: 0;   transform: translate(0px, 0px)    scale(.7); }
+  15%  { opacity: 1;   transform: translate(-8px, -12px)  scale(1.15); }
+  60%  { opacity: 1;   transform: translate(-4px, -32px)  scale(1); }
+  100% { opacity: 0;   transform: translate(18px, -52px) scale(.85); }
+}
+
+/* Task card border flash on check */
+@keyframes taskFlash {
+  0%   { box-shadow: 0 0 0px 0px transparent; }
+  30%  { box-shadow: 0 0 0 4px var(--flash-color), 0 0 18px 4px var(--flash-color); }
+  70%  { box-shadow: 0 0 0 2px var(--flash-color), 0 0 10px 2px var(--flash-color); }
+  100% { box-shadow: 0 0 0 0px transparent; }
+}
+.task-flash {
+  animation: taskFlash .7s cubic-bezier(.4,0,.2,1) forwards;
+}

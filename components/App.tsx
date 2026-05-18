@@ -37,6 +37,8 @@ export default function App() {
   const [styleLi, setStyleLi] = useState(0);
 
   const [bgModalOpen, setBgModalOpen] = useState(false);
+  // Floating +% feedback popups
+  const [xpPops, setXpPops] = useState<{id:string;pct:number;c1:string;c2:string}[]>([]);
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   // Date modal (from ctx / gantt / calendar click)
@@ -80,6 +82,7 @@ export default function App() {
       layer.style.opacity = url ? "1" : "0";
     }
   }, [D?.bgUrl, hydrated]);
+
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -493,6 +496,29 @@ export default function App() {
 
       {/* Progress Tray — only shown on board view */}
       {view === "board" && D && <ProgressTray lists={D.lists} />}
+
+      {/* Gamified +% floating popups */}
+      {xpPops.map(p => (
+        <div key={p.id} style={{
+          position: 'fixed',
+          right: 36,
+          bottom: '48%',
+          zIndex: 9999,
+          pointerEvents: 'none',
+          animation: 'xpFloat 1.4s cubic-bezier(.2,.8,.4,1) forwards',
+          fontFamily: 'Space Grotesk, sans-serif',
+          fontWeight: 900,
+          fontSize: 'clamp(1rem,4vw,1.5rem)',
+          background: `linear-gradient(135deg,${p.c1},${p.c2})`,
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          filter: `drop-shadow(0 0 8px ${p.c1}cc)`,
+          whiteSpace: 'nowrap',
+          userSelect: 'none',
+        }}>
+          +{p.pct}%
+        </div>
+      ))}
 
       {/* New List Modal */}
       <Modal
