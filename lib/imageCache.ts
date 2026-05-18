@@ -65,14 +65,15 @@ export async function cacheImage(url: string): Promise<string> {
   // 3. Server-side proxy (no CORS restrictions)
   try {
     const res = await fetch(`/api/imgcache?url=${encodeURIComponent(url)}`);
-    if (res.ok) {
-      const { dataUrl } = await res.json();
-      if (dataUrl?.startsWith('data:')) {
-        store(key, dataUrl);
-        return dataUrl;
-      }
+    const json = await res.json();
+    if (res.ok && json.dataUrl?.startsWith('data:')) {
+      store(key, json.dataUrl);
+      return json.dataUrl;
     }
-  } catch { /* proxy failed */ }
+    console.error('[imageCache] proxy error:', json.error, 'status:', res.status);
+  } catch (e) {
+    console.error('[imageCache] proxy fetch threw:', e);
+  }
 
   console.warn('[imageCache] Failed to convert to base64:', url);
   return url;
