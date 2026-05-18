@@ -25,32 +25,23 @@ function defaultState(): GlobalState {
 }
 
 export function useStore() {
-  const [G, setG_] = useState<GlobalState>(defaultState);
-  const [hydrated, setHydrated] = useState(false);
+  const [G, setG_] = useState<GlobalState>(() => {
+    // Load from localStorage immediately so state is never defaultState after hydration
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return parsed as GlobalState;
+        }
+      } catch {}
+    }
+    return defaultState();
+  });
+  const [hydrated, setHydrated] = useState(typeof window !== 'undefined');
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        console.log('[store] loaded archivedDashboards:', Object.keys(parsed.archivedDashboards ?? {}));
-        setG_(parsed);
-      }
-    } catch {}
     setHydrated(true);
-
-    // Debug: watch for any writes to the store key
-    const orig = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(k: string, v: string) {
-      if (k === KEY) {
-        try {
-          const parsed = JSON.parse(v);
-          console.trace('[localStorage.setItem] archivedDashboards:', Object.keys(parsed.archivedDashboards ?? {}));
-        } catch {}
-      }
-      orig(k, v);
-    };
-    return () => { localStorage.setItem = orig; };
   }, []);
 
   const setG = useCallback((updater: (prev: GlobalState) => GlobalState) => {
@@ -303,28 +294,19 @@ export function useStore() {
             throw new Error("bad");
           }
 
-          setG_((prev) => {
+          setG((prev) => {
             const next = { ...prev, dashboards: { ...prev.dashboards } };
             let lastAddedId = prev.activeDash;
 
             for (const [id, dash] of Object.entries(incoming.dashboards)) {
               const name = (dash as Dashboard).name || "Imported";
-              // Check if a dashboard with this name already exists
               const existingId = Object.keys(next.dashboards).find(
                 (eid) => next.dashboards[eid].name === name
               );
               if (existingId) {
-                // Ask user whether to replace — confirm() is synchronous and works fine here
-                const replace = window.confirm(
-                  `A dashboard named "${name}" already exists.\nReplace it with the imported version?`
-                );
-                if (replace) {
-                  next.dashboards[existingId] = { ...(dash as Dashboard), name };
-                  lastAddedId = existingId;
-                }
-                // If user says no, skip this dashboard
+                next.dashboards[existingId] = { ...(dash as Dashboard), name };
+                lastAddedId = existingId;
               } else {
-                // New dashboard — add with a fresh ID to avoid key collisions
                 const newId = uid();
                 next.dashboards[newId] = { ...(dash as Dashboard), name };
                 lastAddedId = newId;
@@ -332,7 +314,6 @@ export function useStore() {
             }
 
             next.activeDash = lastAddedId;
-            try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
             return next;
           });
           // Restore objectives if present in the file (new format)
