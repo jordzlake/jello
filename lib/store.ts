@@ -80,16 +80,17 @@ export function useStore() {
     setG((g) => {
       const dbs = { ...g.dashboards };
       const dash = dbs[id];
-      if (!dash) return g; // safety guard
+      if (!dash) return g;
       delete dbs[id];
       const archived = { ...(g.archivedDashboards ?? {}), [id]: dash };
-      // If no boards remain, create a new one so app never crashes
       if (Object.keys(dbs).length === 0) {
         const newId = id + '_new';
         dbs[newId] = emptyDash('My Board');
       }
       const active = g.activeDash === id ? Object.keys(dbs)[0] : g.activeDash;
-      return { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
+      const next = { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
+      console.log('[archiveDash] saving archivedDashboards keys:', Object.keys(next.archivedDashboards ?? {}));
+      return next;
     });
 
   const unarchiveDash = (id: string) =>
