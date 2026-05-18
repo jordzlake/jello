@@ -184,9 +184,23 @@ export default function App() {
 
   // ── Toggles ──
   const handleToggle = (li: number, ti: number) => {
-    const wasDone = D.lists[li].tasks[ti].done;
+    const list = D.lists[li];
+    const wasDone = list.tasks[ti].done;
     store.toggleTask(li, ti);
-    if (!wasDone) setConfetti((c) => c + 1);
+    if (!wasDone) {
+      setConfetti((c) => c + 1);
+      // Calculate % gained from this task completion
+      const total = list.tasks.length;
+      const doneBefore = list.tasks.filter(t => t.done).length;
+      const pctBefore = Math.round(doneBefore / total * 100);
+      const pctAfter  = Math.round((doneBefore + 1) / total * 100);
+      const gain = pctAfter - pctBefore;
+      if (gain > 0) {
+        const id = `xp_${Date.now()}_${li}_${ti}`;
+        setXpPops(prev => [...prev, { id, pct: gain, c1: list.palette.c1, c2: list.palette.c2 }]);
+        setTimeout(() => setXpPops(prev => prev.filter(p => p.id !== id)), 1400);
+      }
+    }
   };
 
   // ── Dashboard ──
@@ -497,32 +511,40 @@ export default function App() {
       {/* Progress Tray — only shown on board view */}
       {view === "board" && D && <ProgressTray lists={D.lists} />}
 
-      {/* Gamified +% floating popups */}
-      {xpPops.map((p, idx) => (
-        <div key={p.id} style={{
-          position: 'fixed',
-          right: 44,
-          bottom: `calc(44% + ${idx * 44}px)`,
-          zIndex: 9999,
-          pointerEvents: 'none',
-          animation: 'xpFloat 1.3s cubic-bezier(.2,.8,.4,1) forwards',
-          fontFamily: 'Space Grotesk, sans-serif',
-          fontWeight: 900,
-          fontSize: 'clamp(1.1rem,5vw,1.8rem)',
-          background: `linear-gradient(135deg,${p.c1},${p.c2})`,
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          color: 'transparent',
-          filter: `drop-shadow(0 0 10px ${p.c1})`,
-          whiteSpace: 'nowrap',
-          userSelect: 'none',
-          letterSpacing: '-0.5px',
-          lineHeight: 1,
-        }}>
-          +{p.pct}%
-        </div>
-      ))}
+      {/* Gamified +% floating popups — style tag injection guarantees gradient renders */}
+      {xpPops.map((p, idx) => {
+        const cls = `xp_${p.id.replace(/[^a-z0-9]/gi,'_')}`;
+        return (
+          <div key={p.id} style={{
+            position: 'fixed',
+            right: 52,
+            bottom: `calc(48% + ${idx * 54}px)`,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            animation: 'xpFloat 1.5s ease-in-out forwards',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
+            lineHeight: 1,
+          }}>
+            <style>{`
+              .${cls} {
+                font-family: 'Space Grotesk', sans-serif;
+                font-weight: 900;
+                font-size: 1.7rem;
+                letter-spacing: -1px;
+                background-image: linear-gradient(135deg, ${p.c1}, ${p.c2});
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                color: transparent;
+                display: inline-block;
+                filter: drop-shadow(0 0 8px ${p.c1});
+              }
+            `}</style>
+            <span className={cls}>+{p.pct}%</span>
+          </div>
+        );
+      })}
 
       {/* New List Modal */}
       <Modal
