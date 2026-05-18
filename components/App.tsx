@@ -87,28 +87,30 @@ export default function App() {
     }
   }, [D?.bgUrl, hydrated]);
 
-  // One-time migration: convert any raw URL bannerUrls/bgUrls to base64 on load
+  // One-time migration: convert any raw URL bannerUrls/bgUrls to base64 across ALL dashboards
   useEffect(() => {
     if (!hydrated || !G) return;
     (async () => {
-      for (const [, dash] of Object.entries(G.dashboards)) {
-        const d = dash as any;
-        // Migrate bgUrl
-        if (d.bgUrl && !d.bgUrl.startsWith('data:')) {
-          const b64 = await cacheImage(d.bgUrl);
-          if (b64.startsWith('data:')) store.setBg(b64);
-        }
-        // Migrate every list's bannerUrl
-        if (Array.isArray(d.lists)) {
-          for (let li = 0; li < d.lists.length; li++) {
-            const list = d.lists[li];
-            if (list.bannerUrl && !list.bannerUrl.startsWith('data:')) {
-              const b64 = await cacheImage(list.bannerUrl);
-              if (b64.startsWith('data:')) store.updateList(li, { bannerUrl: b64 });
-            }
-          }
+      // Collect every unique raw URL across all dashboards
+      const rawUrls = new Set<string>();
+      for (const d of Object.values(G.dashboards)) {
+        if (d.bgUrl && !d.bgUrl.startsWith('data:')) rawUrls.add(d.bgUrl);
+        for (const l of d.lists) {
+          if (l.bannerUrl && !l.bannerUrl.startsWith('data:')) rawUrls.add(l.bannerUrl);
         }
       }
+      if (rawUrls.size === 0) return;
+
+      // Fetch all base64 in parallel
+      const resolved = new Map<string, string>();
+      await Promise.all(Array.from(rawUrls).map(async url => {
+        const b64 = await cacheImage(url);
+        if (b64.startsWith('data:')) resolved.set(url, b64);
+      }));
+      if (resolved.size === 0) return;
+
+      // Apply all at once via migrateImages
+      store.migrateImages((url: string) => resolved.get(url) ?? url);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);

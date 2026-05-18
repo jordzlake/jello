@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { getCached } from "@/lib/imageCache";
 import { JList, Task, Palette } from "@/lib/types";
 import TaskCard from "./TaskCard";
 
@@ -157,11 +158,11 @@ export default function ListCard({
         }}
       >
         {/* Banner image — object-fit:cover is always applied immediately */}
-        {list.bannerUrl && list.bannerUrl.startsWith("data:") && (
+        {(() => { const src = list.bannerUrl ? (list.bannerUrl.startsWith("data:") ? list.bannerUrl : getCached(list.bannerUrl)) : null; return src ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={list.bannerUrl}
-            src={list.bannerUrl}
+            key={src}
+            src={src}
             alt=""
             style={{
               position: "absolute",
@@ -180,7 +181,7 @@ export default function ListCard({
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
-        )}
+        ) : null; })()}
         <div
           style={{
             position: "absolute",

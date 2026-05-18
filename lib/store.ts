@@ -342,6 +342,27 @@ Replace it with the imported version?`
       r.readAsText(file);
     });
 
+  const migrateImages = (resolve: (url: string) => string) => {
+    setG((g) => {
+      const dashboards = { ...g.dashboards };
+      for (const id of Object.keys(dashboards)) {
+        const d = dashboards[id];
+        const newLists = d.lists.map(l => {
+          if (l.bannerUrl && !l.bannerUrl.startsWith('data:')) {
+            const r = resolve(l.bannerUrl);
+            if (r !== l.bannerUrl) return { ...l, bannerUrl: r };
+          }
+          return l;
+        });
+        const newBg = d.bgUrl && !d.bgUrl.startsWith('data:') ? resolve(d.bgUrl) : d.bgUrl;
+        if (newLists !== d.lists || newBg !== d.bgUrl) {
+          dashboards[id] = { ...d, lists: newLists, bgUrl: newBg };
+        }
+      }
+      return { ...g, dashboards };
+    });
+  };
+
   return {
     G,
     D,
@@ -352,6 +373,7 @@ Replace it with the imported version?`
     deleteDash,
     archiveDash,
     unarchiveDash,
+    migrateImages,
     addList,
     updateList,
     reorderLists,
