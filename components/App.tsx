@@ -270,7 +270,6 @@ export default function App() {
       showToast("Cannot delete the only dashboard");
       return;
     }
-    if (!confirm(`Delete "${G.dashboards[id].name}"?`)) return;
     store.deleteDash(id);
     showToast("Dashboard deleted");
   };
@@ -280,9 +279,9 @@ export default function App() {
       showToast("Cannot archive the only dashboard");
       return;
     }
-    if (!confirm(`Archive "${G.dashboards[id].name}"? You can restore it anytime.`)) return;
+    const name = G.dashboards[id].name;
     store.archiveDash(id);
-    showToast(`"${G.dashboards[id].name}" archived`);
+    showToast(`"${name}" archived — restore it in Archive`);
   };
 
   const handleUnarchiveDash = (id: string) => {
@@ -676,7 +675,7 @@ export default function App() {
         onDeleteTask={(i) => { store.deleteArchivedTask(i); }}
         archivedDashboards={G.archivedDashboards ?? {}}
         onRestoreDash={(id) => { store.unarchiveDash(id); showToast(`Board restored`); }}
-        onDeleteDash={(id) => { if(confirm(`Permanently delete this board?`)) store.deleteDash(id); }}
+        onDeleteDash={(id) => { store.deleteDash(id); }}
       />
       {archiveOpen && (
         <div
