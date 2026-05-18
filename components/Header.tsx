@@ -17,12 +17,13 @@ interface Props {
   onNewDash: () => void;
   onRenameDash: (id: string) => void;
   onDeleteDash: (id: string) => void;
+  onArchiveDash: (id: string) => void;
 }
 
 export default function Header({
   G, view, onViewChange, onOpenBg, onOpenArchive,
   onSaveJson, onLoadJson, onSwitchDash, onNewDash,
-  onRenameDash, onDeleteDash,
+  onRenameDash, onDeleteDash, onArchiveDash,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef  = useRef<HTMLDivElement>(null);
@@ -88,26 +89,41 @@ export default function Header({
           alignItems:"center", gap:5, flex:1, minWidth:0, overflowX:"auto", padding:"2px 0",
         }}>
           {dashIds.map(id => (
-            <button key={id} onClick={() => onSwitchDash(id)} onDoubleClick={() => onRenameDash(id)}
-              style={{
-                border:"1px solid", flexShrink:0,
-                borderColor: id===G.activeDash ? "var(--accent)" : "var(--border)",
-                background:  id===G.activeDash ? "var(--accent)" : "var(--surface)",
-                color:       id===G.activeDash ? "#fff" : "var(--muted)",
-                fontFamily:"DM Sans,sans-serif", fontSize:".75rem",
-                padding:"5px 11px", borderRadius:7, cursor:"pointer", transition:"all .2s",
-                whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:5,
-                boxShadow: id===G.activeDash ? "0 0 14px rgba(111,95,255,.4)" : "none",
-              }}>
-              <span>{G.dashboards[id].name}</span>
+            <div key={id} style={{ position:"relative", display:"inline-flex", flexShrink:0 }}
+              onMouseEnter={e => { const a = e.currentTarget.querySelector<HTMLElement>('.tab-actions'); if(a) a.style.opacity="1"; }}
+              onMouseLeave={e => { const a = e.currentTarget.querySelector<HTMLElement>('.tab-actions'); if(a) a.style.opacity="0"; }}>
+              <button onClick={() => onSwitchDash(id)} onDoubleClick={() => onRenameDash(id)}
+                style={{
+                  border:"1px solid", flexShrink:0,
+                  borderColor: id===G.activeDash ? "var(--accent)" : "var(--border)",
+                  background:  id===G.activeDash ? "var(--accent)" : "var(--surface)",
+                  color:       id===G.activeDash ? "#fff" : "var(--muted)",
+                  fontFamily:"DM Sans,sans-serif", fontSize:".75rem",
+                  padding:"5px 11px", paddingRight: dashIds.length > 1 ? "42px" : "11px",
+                  borderRadius:7, cursor:"pointer", transition:"all .2s",
+                  whiteSpace:"nowrap",
+                  boxShadow: id===G.activeDash ? "0 0 14px rgba(111,95,255,.4)" : "none",
+                }}>
+                {G.dashboards[id].name}
+              </button>
               {dashIds.length > 1 && (
-                <span onClick={e => { e.stopPropagation(); onDeleteDash(id); }}
-                  style={{ opacity:0, fontSize:".58rem", cursor:"pointer", transition:"opacity .15s" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity="1"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity="0"}>✕</span>
+                <span className="tab-actions" style={{
+                  position:"absolute", right:4, top:"50%", transform:"translateY(-50%)",
+                  display:"flex", alignItems:"center", gap:2, opacity:0, transition:"opacity .15s",
+                }}>
+                  <span title="Archive board"
+                    onClick={e => { e.stopPropagation(); onArchiveDash(id); }}
+                    style={{ cursor:"pointer", fontSize:".58rem", color: id===G.activeDash ? "rgba(255,255,255,.7)" : "var(--muted)", padding:"1px 2px" }}>
+                    <i className="fa-solid fa-box-archive"/>
+                  </span>
+                  <span title="Delete board"
+                    onClick={e => { e.stopPropagation(); onDeleteDash(id); }}
+                    style={{ cursor:"pointer", fontSize:".65rem", color: id===G.activeDash ? "rgba(255,255,255,.7)" : "var(--muted)", padding:"1px 2px" }}>✕</span>
+                </span>
               )}
-            </button>
+            </div>
           ))}
+
           <button onClick={onNewDash}
             style={{ border:"1px dashed rgba(255,255,255,.14)", background:"transparent", color:"var(--muted)", fontSize:".75rem", padding:"5px 9px", borderRadius:7, cursor:"pointer", flexShrink:0 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
@@ -178,6 +194,7 @@ export default function Header({
                     onClick={() => { onSwitchDash(id); setMenuOpen(false); }}/>
                 ))}
                 <DI icon="fa-plus" label="New Dashboard" onClick={() => { onNewDash(); setMenuOpen(false); }}/>
+
                 <Sep/>
 
                 {/* Views */}

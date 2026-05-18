@@ -72,6 +72,29 @@ export function useStore() {
       return { ...g, activeDash: active, dashboards: dbs };
     });
 
+  const archiveDash = (id: string) =>
+    setG((g) => {
+      const dbs = { ...g.dashboards };
+      const dash = dbs[id];
+      delete dbs[id];
+      const archived = { ...(g.archivedDashboards ?? {}), [id]: dash };
+      const active = g.activeDash === id ? (Object.keys(dbs)[0] ?? '') : g.activeDash;
+      return { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
+    });
+
+  const unarchiveDash = (id: string) =>
+    setG((g) => {
+      const archived = { ...(g.archivedDashboards ?? {}) };
+      const dash = archived[id];
+      delete archived[id];
+      return {
+        ...g,
+        activeDash: id,
+        dashboards: { ...g.dashboards, [id]: dash },
+        archivedDashboards: archived,
+      };
+    });
+
   // ── Board helpers ──
   const updateD = (patch: Partial<Dashboard>) =>
     setG((g) => ({
@@ -327,6 +350,8 @@ Replace it with the imported version?`
     newDash,
     renameDash,
     deleteDash,
+    archiveDash,
+    unarchiveDash,
     addList,
     updateList,
     reorderLists,

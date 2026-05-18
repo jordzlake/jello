@@ -2,9 +2,9 @@
 import { Dashboard } from '@/lib/types';
 import { fmtDate } from '@/lib/utils';
 
-interface Props { open:boolean; D:Dashboard; onClose:()=>void; onRestoreList:(i:number)=>void; onRestoreTask:(i:number)=>void; onDeleteTask:(i:number)=>void; }
+interface Props { open:boolean; D:Dashboard; onClose:()=>void; onRestoreList:(i:number)=>void; onRestoreTask:(i:number)=>void; onDeleteTask:(i:number)=>void; archivedDashboards: Record<string,Dashboard>; onRestoreDash:(id:string)=>void; onDeleteDash:(id:string)=>void; }
 
-export default function ArchivePanel({ open, D, onClose, onRestoreList, onRestoreTask, onDeleteTask }: Props) {
+export default function ArchivePanel({ open, D, onClose, onRestoreList, onRestoreTask, onDeleteTask, archivedDashboards, onRestoreDash, onDeleteDash }: Props) {
   return (
     <div style={{
       position:'fixed',right:open?0:-430,top:0,width:400,maxWidth:'100vw',height:'100vh',
@@ -14,7 +14,7 @@ export default function ArchivePanel({ open, D, onClose, onRestoreList, onRestor
       display:'flex',flexDirection:'column',boxShadow:'-20px 0 60px rgba(0,0,0,.5)',
     }}>
       <div style={{padding:'18px 20px 12px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'.92rem'}}>
+        <h3 style={{fontFamily:'Space Grotesk,sans-serif',fontWeight:700,fontSize:'.92rem'}}>
           <i className="fa-solid fa-box-archive" style={{marginRight:6,color:'var(--muted)'}}></i>Archive
         </h3>
         <button onClick={onClose} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'1rem'}}>
@@ -22,10 +22,27 @@ export default function ArchivePanel({ open, D, onClose, onRestoreList, onRestor
         </button>
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'12px 18px'}}>
-        {D.archivedLists.length===0&&D.archivedTasks.length===0 ? (
+        {D.archivedLists.length===0&&D.archivedTasks.length===0&&Object.keys(archivedDashboards).length===0 ? (
           <p style={{color:'var(--muted)',fontSize:'.82rem',textAlign:'center',padding:'20px 0'}}>Nothing archived yet</p>
         ) : (
           <>
+            {Object.keys(archivedDashboards).length>0 && (
+              <Section title="Boards">
+                {Object.entries(archivedDashboards).map(([id, dash])=>(
+                  <AItem key={id}>
+                    <i className="fa-solid fa-table-columns" style={{color:'var(--muted)',fontSize:'.75rem'}}/>
+                    <span style={{fontSize:'.79rem',flex:1}}>
+                      {dash.name}
+                      <span style={{color:'var(--muted)',fontSize:'.7rem'}}> · {dash.lists.length} lists, {dash.lists.reduce((s,l)=>s+l.tasks.length,0)} tasks</span>
+                    </span>
+                    <ABtn onClick={()=>onRestoreDash(id)}>Restore</ABtn>
+                    <button onClick={()=>onDeleteDash(id)} style={{background:'none',border:'1px solid rgba(255,107,107,.25)',color:'#ff6b6b',fontSize:'.68rem',padding:'3px 7px',borderRadius:6,cursor:'pointer'}}>
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
+                  </AItem>
+                ))}
+              </Section>
+            )}
             {D.archivedLists.length>0 && (
               <Section title="Lists">
                 {D.archivedLists.map((lst,i)=>(

@@ -36,6 +36,7 @@ export interface Dashboard {
 export interface GlobalState {
   activeDash: string;
   dashboards: Record<string, Dashboard>;
+  archivedDashboards?: Record<string, Dashboard>;
 }
 
 export interface ObjComponent {

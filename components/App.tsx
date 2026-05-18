@@ -246,6 +246,21 @@ export default function App() {
     showToast("Dashboard deleted");
   };
 
+  const handleArchiveDash = (id: string) => {
+    if (Object.keys(G.dashboards).length === 1) {
+      showToast("Cannot archive the only dashboard");
+      return;
+    }
+    if (!confirm(`Archive "${G.dashboards[id].name}"? You can restore it anytime.`)) return;
+    store.archiveDash(id);
+    showToast(`"${G.dashboards[id].name}" archived`);
+  };
+
+  const handleUnarchiveDash = (id: string) => {
+    store.unarchiveDash(id);
+    showToast(`"${(G.archivedDashboards ?? {})[id]?.name}" restored`);
+  };
+
   // ── New list ──
   const confirmNewList = () => {
     if (!newListName.trim()) return;
@@ -327,6 +342,7 @@ export default function App() {
           onNewDash={openNewDash}
           onRenameDash={openRenameDash}
           onDeleteDash={handleDeleteDash}
+          onArchiveDash={handleArchiveDash}
         />
 
         <main
@@ -625,17 +641,12 @@ export default function App() {
         open={archiveOpen}
         D={D}
         onClose={() => setArchiveOpen(false)}
-        onRestoreList={(i) => {
-          store.restoreList(i);
-          showToast("List restored");
-        }}
-        onRestoreTask={(i) => {
-          store.restoreTask(i);
-          showToast("Task restored");
-        }}
-        onDeleteTask={(i) => {
-          store.deleteArchivedTask(i);
-        }}
+        onRestoreList={(i) => { store.restoreList(i); showToast("List restored"); }}
+        onRestoreTask={(i) => { store.restoreTask(i); showToast("Task restored"); }}
+        onDeleteTask={(i) => { store.deleteArchivedTask(i); }}
+        archivedDashboards={G.archivedDashboards ?? {}}
+        onRestoreDash={(id) => { store.unarchiveDash(id); showToast(`Board restored`); }}
+        onDeleteDash={(id) => { if(confirm(`Permanently delete this board?`)) store.deleteDash(id); }}
       />
       {archiveOpen && (
         <div
