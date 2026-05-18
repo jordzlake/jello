@@ -31,7 +31,11 @@ export function useStore() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setG_(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        console.log('[store] loaded archivedDashboards:', Object.keys(parsed.archivedDashboards ?? {}));
+        setG_(parsed);
+      }
     } catch {}
     setHydrated(true);
   }, []);
@@ -76,9 +80,15 @@ export function useStore() {
     setG((g) => {
       const dbs = { ...g.dashboards };
       const dash = dbs[id];
+      if (!dash) return g; // safety guard
       delete dbs[id];
       const archived = { ...(g.archivedDashboards ?? {}), [id]: dash };
-      const active = g.activeDash === id ? (Object.keys(dbs)[0] ?? '') : g.activeDash;
+      // If no boards remain, create a new one so app never crashes
+      if (Object.keys(dbs).length === 0) {
+        const newId = id + '_new';
+        dbs[newId] = emptyDash('My Board');
+      }
+      const active = g.activeDash === id ? Object.keys(dbs)[0] : g.activeDash;
       return { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
     });
 
