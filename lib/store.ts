@@ -80,41 +80,42 @@ export function useStore() {
       return { ...g, activeDash: active, dashboards: dbs };
     });
 
-  const archiveDash = (id: string) =>
-    setG((g) => {
+  const archiveDash = (id: string) => {
+    // Write directly to localStorage first, then sync React state
+    try {
+      const raw = localStorage.getItem(KEY);
+      const g: GlobalState = raw ? JSON.parse(raw) : defaultState();
+      const dash = g.dashboards[id];
+      if (!dash) return;
       const dbs = { ...g.dashboards };
-      const dash = dbs[id];
-      if (!dash) return g;
       delete dbs[id];
+      if (Object.keys(dbs).length === 0) dbs[id + '_new'] = emptyDash('My Board');
       const archived = { ...(g.archivedDashboards ?? {}), [id]: dash };
-      if (Object.keys(dbs).length === 0) {
-        const newId = id + '_new';
-        dbs[newId] = emptyDash('My Board');
-      }
       const active = g.activeDash === id ? Object.keys(dbs)[0] : g.activeDash;
-      const next = { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
-      // Immediately verify it was written
-      setTimeout(() => {
-        try {
-          const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-          console.log('[archiveDash] verified saved archivedDashboards:', Object.keys(saved.archivedDashboards ?? {}));
-        } catch {}
-      }, 100);
-      return next;
-    });
+      const next: GlobalState = { ...g, activeDash: active, dashboards: dbs, archivedDashboards: archived };
+      localStorage.setItem(KEY, JSON.stringify(next));
+      setG_(() => next);
+    } catch (e) { console.error('archiveDash failed', e); }
+  };
 
-  const unarchiveDash = (id: string) =>
-    setG((g) => {
+  const unarchiveDash = (id: string) => {
+    try {
+      const raw = localStorage.getItem(KEY);
+      const g: GlobalState = raw ? JSON.parse(raw) : defaultState();
       const archived = { ...(g.archivedDashboards ?? {}) };
       const dash = archived[id];
+      if (!dash) return;
       delete archived[id];
-      return {
+      const next: GlobalState = {
         ...g,
         activeDash: id,
         dashboards: { ...g.dashboards, [id]: dash },
         archivedDashboards: archived,
       };
-    });
+      localStorage.setItem(KEY, JSON.stringify(next));
+      setG_(() => next);
+    } catch (e) { console.error('unarchiveDash failed', e); }
+  };
 
   // ── Board helpers ──
   const updateD = (patch: Partial<Dashboard>) =>
