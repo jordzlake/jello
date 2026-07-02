@@ -30,7 +30,7 @@ export default function Confetti({ burst }: { burst: number }) {
       "#4facfe",
       "#fa709a",
     ];
-    for (let i = 0; i < 130; i++)
+    for (let i = 0; i < 200; i++)
       parts.current.push({
         x: Math.random() * cvs.width,
         y: Math.random() * cvs.height - cvs.height,
@@ -38,7 +38,7 @@ export default function Confetti({ burst }: { burst: number }) {
         h: Math.random() * 6 + 3,
         c: C[~~(Math.random() * C.length)],
         vx: (Math.random() - 0.5) * 4,
-        vy: Math.random() * 4 + 2,
+        vy: Math.random() * 2 + 1,
         rot: Math.random() * 360,
         rv: (Math.random() - 0.5) * 8,
         life: 1,
@@ -55,8 +55,8 @@ export default function Confetti({ burst }: { burst: number }) {
         p.x += p.vx;
         p.y += p.vy;
         p.rot += p.rv;
-        if (p.y > cvs.height * 0.7) p.life -= 0.01;
-        else p.vy += 0.05;
+        if (p.y > cvs.height * 0.95) p.life -= 0.004;
+        else if (p.vy < 1.5) p.vy += 0.015;
         cx.save();
         cx.globalAlpha = p.life;
         cx.translate(p.x, p.y);
